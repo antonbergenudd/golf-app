@@ -1,3 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+  Expo / react-native-web: ambient layers with negative offsets must not widen
+  the document. Without this, body can scroll horizontally; without height
+  chaining, you can get document + ScrollView vertical “double scroll”.
+*/
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow-x: hidden;
+  font-family: Roboto_400Regular, sans-serif;
+}

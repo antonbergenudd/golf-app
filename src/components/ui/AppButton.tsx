@@ -1,4 +1,6 @@
-import { ActivityIndicator, Pressable, Text } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
+
+import { Font } from "@/theme/fonts";
 
 type Props = {
   label: string;
@@ -18,7 +20,10 @@ export function AppButton({ label, onPress, loading, variant = "gold" }: Props) 
         <ActivityIndicator color={gold ? "#071209" : "#D4AF37"} />
       ) : (
         <Text
-          className={`text-[15px] font-bold tracking-wide ${gold ? "text-[#071209]" : "text-white"}`}
+          style={[
+            styles.label,
+            gold ? styles.labelGoldFill : styles.labelMuted,
+          ]}
         >
           {label}
         </Text>
@@ -26,3 +31,18 @@ export function AppButton({ label, onPress, loading, variant = "gold" }: Props) 
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  label: {
+    fontFamily: Font.semiBold,
+    fontSize: 15,
+    fontWeight: "normal",
+    letterSpacing: 0.5,
+  },
+  labelGoldFill: {
+    color: "#071209",
+  },
+  labelMuted: {
+    color: "#FFFFFF",
+  },
+});

@@ -54,7 +54,7 @@ export default function EndGameScreen() {
     return (
       <GolfChrome>
         <View className="flex-1 items-center justify-center">
-          <Text className="text-[#6B9872]">Loading scores…</Text>
+          <Text className="font-sans text-[#6B9872]">Loading scores…</Text>
         </View>
       </GolfChrome>
     );
@@ -73,13 +73,13 @@ export default function EndGameScreen() {
     <GolfChrome>
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
         <ScrollView contentContainerClassName="px-6 pb-12 pt-10">
-          <Text className="mb-2 text-center text-[11px] font-bold uppercase tracking-[3px] text-[#6B9872]">
+          <Text className="font-sans mb-2 text-center text-[11px] font-bold uppercase tracking-[3px] text-[#6B9872]">
             {gameModeName(mode)}
           </Text>
-          <Text className="mb-2 text-center text-[28px] font-extrabold text-white">
+          <Text className="font-sans mb-2 text-center text-[28px] font-extrabold text-white">
             {lobbyName}
           </Text>
-          <Text className="mb-10 text-center text-sm text-[#9AB79F]">
+          <Text className="font-sans mb-10 text-center text-sm text-[#9AB79F]">
             Final balance in {gameCurrencyLabel(mode, { short: true })}
           </Text>
 
@@ -88,11 +88,11 @@ export default function EndGameScreen() {
               key={row.id}
               className="mb-3 flex-row items-center justify-between rounded-[14px] border border-[#2A5030] bg-[#142918]/95 px-4 py-3"
             >
-              <Text className="text-base font-bold text-white">
+              <Text className="font-sans text-base font-bold text-white">
                 #{index + 1} {row.name}
                 {row.id === currentPlayerId ? " (you)" : ""}
               </Text>
-              <Text className="text-lg font-black text-[#D4AF37]">{row.points}</Text>
+              <Text className="font-sans text-lg font-black text-[#D4AF37]">{row.points}</Text>
             </View>
           ))}
 

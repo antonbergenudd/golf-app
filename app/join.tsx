@@ -6,6 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  StyleSheet,
   Text,
   TextInput,
   View,
@@ -21,6 +22,7 @@ import {
   savePlayerName,
   loadSavedPlayerName,
 } from "@/services/gameSession";
+import { Font } from "@/theme/fonts";
 
 export default function JoinLobbyScreen() {
   const [code, setCode] = useState("");
@@ -59,7 +61,10 @@ export default function JoinLobbyScreen() {
 
       const ok = await databaseService.joinLobby(c, playerId, pn);
       if (!ok) {
-        Alert.alert("Can't join", "Lobby full, invalid code, or game already started.");
+        Alert.alert(
+          "Can't join",
+          "Lobby full, invalid code, or game already started.",
+        );
         setLoading(false);
         return;
       }
@@ -88,33 +93,27 @@ export default function JoinLobbyScreen() {
 
   return (
     <GolfChrome>
-      <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
+      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
-          className="flex-1"
+          style={styles.flex}
         >
-          <View className="flex-row items-center justify-between border-b border-[#2A5030]/80 px-4 py-3">
+          <View style={styles.header}>
             <Pressable onPress={() => router.back()} hitSlop={12}>
               <Ionicons name="chevron-back" size={22} color="#D4AF37" />
             </Pressable>
-            <Text className="text-lg font-bold text-white">Join game</Text>
-            <View style={{ width: 22 }} />
+            <Text style={styles.headerTitle}>Join game</Text>
+            <View style={styles.headerSpacer} />
           </View>
 
-          <View className="flex-1 px-6 pt-4">
-            <Text className="mb-2 text-[11px] font-bold uppercase tracking-[3.2px] text-[#6B9872]">
-              Fairway
-            </Text>
-            <Text className="mb-2 text-[28px] font-extrabold tracking-tight text-white">
-              Enter the code
-            </Text>
-            <Text className="mb-8 text-[15px] leading-snug text-[#C8DCC9]">
+          <View style={styles.body}>
+            <Text style={styles.kicker}>Fairway</Text>
+            <Text style={styles.headline}>Enter the code</Text>
+            <Text style={styles.subtitle}>
               Ask the host for their six-character lobby code.
             </Text>
 
-            <Text className="mb-2 text-xs font-semibold text-[#B8D4BF]">
-              Lobby code
-            </Text>
+            <FieldLabel>Lobby code</FieldLabel>
             <TextInput
               value={code}
               onChangeText={(t) => setCode(t.toUpperCase())}
@@ -122,27 +121,25 @@ export default function JoinLobbyScreen() {
               maxLength={6}
               placeholder="• • • • • •"
               placeholderTextColor="rgba(42,80,48,0.85)"
-              className="mb-7 rounded-[14px] border border-[#2A5030] bg-[#1C3D22] py-4 text-center text-[32px] font-bold tracking-[10px] text-[#D4AF37]"
+              style={styles.codeInput}
             />
 
-            <Text className="mb-2 text-xs font-semibold text-[#B8D4BF]">
-              Your name
-            </Text>
+            <FieldLabel>Your name</FieldLabel>
             <TextInput
               value={playerName}
               onChangeText={setPlayerName}
               placeholder="How should others see you?"
               placeholderTextColor="#3D6644"
               maxLength={20}
-              className="mb-9 rounded-[14px] border border-[#2A5030] bg-[#1C3D22] px-4 py-[18px] text-base text-white"
+              style={[styles.input, styles.inputLast]}
             />
 
             <AppButton label="Join game" loading={loading} onPress={join} />
 
-            <Pressable onPress={() => router.back()} className="mt-8 items-center">
-              <Text className="text-center text-sm text-[#6B9872]">
+            <Pressable onPress={() => router.back()} style={styles.footer}>
+              <Text style={styles.footerText}>
                 Don&apos;t have a code?{" "}
-                <Text className="font-bold text-[#D4AF37]">Host a round</Text>
+                <Text style={styles.footerStrong}>Host a round</Text>
               </Text>
             </Pressable>
           </View>
@@ -151,3 +148,112 @@ export default function JoinLobbyScreen() {
     </GolfChrome>
   );
 }
+
+function FieldLabel({ children }: { children: string }) {
+  return <Text style={styles.fieldLabel}>{children}</Text>;
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1 },
+  flex: { flex: 1 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(42,80,48,0.8)",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  headerTitle: {
+    fontFamily: Font.semiBold,
+    fontSize: 17,
+    fontWeight: "normal",
+    letterSpacing: -0.2,
+    color: "#FFFFFF",
+  },
+  headerSpacer: { width: 22 },
+  body: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+  },
+  kicker: {
+    fontFamily: Font.semiBold,
+    marginBottom: 8,
+    fontSize: 11,
+    fontWeight: "normal",
+    letterSpacing: 3.2,
+    textTransform: "uppercase",
+    color: "#6B9872",
+  },
+  headline: {
+    fontFamily: Font.bold,
+    marginBottom: 8,
+    fontSize: 28,
+    fontWeight: "normal",
+    letterSpacing: -0.45,
+    color: "#FFFFFF",
+  },
+  subtitle: {
+    fontFamily: Font.regular,
+    marginBottom: 32,
+    fontSize: 15,
+    fontWeight: "normal",
+    lineHeight: 15 * 1.45,
+    color: "#C8DCC9",
+  },
+  fieldLabel: {
+    fontFamily: Font.semiBold,
+    marginBottom: 8,
+    fontSize: 12,
+    fontWeight: "normal",
+    color: "#B8D4BF",
+  },
+  codeInput: {
+    fontFamily: Font.bold,
+    marginBottom: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#2A5030",
+    backgroundColor: "#1C3D22",
+    paddingVertical: 16,
+    textAlign: "center",
+    fontSize: 32,
+    fontWeight: "normal",
+    letterSpacing: 10,
+    color: "#D4AF37",
+  },
+  input: {
+    fontFamily: Font.regular,
+    marginBottom: 20,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#2A5030",
+    backgroundColor: "#1C3D22",
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    fontSize: 16,
+    fontWeight: "normal",
+    color: "#FFFFFF",
+  },
+  inputLast: {
+    marginBottom: 36,
+  },
+  footer: {
+    marginTop: 32,
+    alignItems: "center",
+  },
+  footerText: {
+    fontFamily: Font.regular,
+    textAlign: "center",
+    fontSize: 14,
+    fontWeight: "normal",
+    color: "#6B9872",
+  },
+  footerStrong: {
+    fontFamily: Font.bold,
+    fontWeight: "normal",
+    color: "#D4AF37",
+  },
+});

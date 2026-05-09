@@ -16,6 +16,7 @@ import Svg, { Defs, G, LinearGradient as SvgLinearGradient, Stop, Text as SvgTex
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { GolfChrome } from "@/components/fairway/GolfChrome";
+import { Font } from "@/theme/fonts";
 import { databaseService } from "@/services/databaseService";
 import {
   clearGameSession,
@@ -109,8 +110,10 @@ export default function HomeScreen() {
     <GolfChrome>
       <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
         <ScrollView
+          style={styles.scrollView}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollContent}
+          showsHorizontalScrollIndicator={false}
         >
           <View className="flex-1 justify-center px-6">
             <View className="mt-2 items-center">
@@ -237,8 +240,9 @@ function GradientTitle() {
         <G transform={`translate(${w / 2}, ${h / 2})`}>
           <SvgText
             fill={`url(#${gradId})`}
+            fontFamily={Font.black}
             fontSize={HERO_TITLE_SIZE}
-            fontWeight="800"
+            fontWeight="normal"
             letterSpacing={-1.2}
             textAnchor="middle"
             alignmentBaseline="central"
@@ -411,24 +415,27 @@ function GameTile({
 
 const styles = StyleSheet.create({
   heroFairway: {
+    fontFamily: Font.semiBold,
     textAlign: "center",
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "normal",
     letterSpacing: 3.2,
     color: mist,
     textTransform: "uppercase",
   },
   heroBody: {
+    fontFamily: Font.regular,
     maxWidth: 448,
     paddingHorizontal: 8,
     textAlign: "center",
     fontSize: 15,
-    fontWeight: "400",
+    fontWeight: "normal",
     lineHeight: 15 * 1.45,
     color: "rgba(255,255,255,0.78)",
     alignSelf: "center",
   },
   heroFooter: {
+    fontFamily: Font.regular,
     textAlign: "center",
     fontSize: 12,
     lineHeight: 12 * 1.4,
@@ -436,31 +443,42 @@ const styles = StyleSheet.create({
     color: "rgba(107,152,114,0.85)",
   },
   resumeTitle: {
+    fontFamily: Font.bold,
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "normal",
     letterSpacing: -0.2,
     color: "#FFFFFF",
   },
   resumeSubtitle: {
+    fontFamily: Font.regular,
     fontSize: 13,
     lineHeight: 13 * 1.35,
+    fontWeight: "normal",
     color: "rgba(255,255,255,0.72)",
   },
   tileTitle: {
+    fontFamily: Font.bold,
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "normal",
     letterSpacing: -0.2,
     color: "#FFFFFF",
   },
   tileSubtitle: {
+    fontFamily: Font.regular,
     fontSize: 13.5,
     lineHeight: 13.5 * 1.4,
+    fontWeight: "normal",
     color: "rgba(255,255,255,0.72)",
   },
   tileHint: {
+    fontFamily: Font.regular,
     fontSize: 11,
     fontStyle: "italic",
+    fontWeight: "normal",
     color: "rgba(107,152,114,0.95)",
+  },
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,

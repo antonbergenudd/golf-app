@@ -64,7 +64,7 @@ export default function ScorecardScreen() {
     return (
       <GolfChrome>
         <View className="flex-1 items-center justify-center">
-          <Text className="text-[#6B9872]">Loading…</Text>
+          <Text className="font-sans text-[#6B9872]">Loading…</Text>
         </View>
       </GolfChrome>
     );
@@ -86,7 +86,7 @@ export default function ScorecardScreen() {
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <Ionicons name="chevron-back" size={22} color="#D4AF37" />
           </Pressable>
-          <Text className="flex-1 text-center text-lg font-bold text-white">
+          <Text className="font-sans flex-1 text-center text-lg font-bold text-white">
             Lobby
           </Text>
           <View style={{ width: 22 }} />
@@ -114,28 +114,28 @@ export default function ScorecardScreen() {
                 key={pid}
                 className="mb-4 rounded-[18px] border border-[#2A5030] bg-[#142918]/92 p-4"
               >
-                <Text className="text-lg font-bold text-white">{displayName}</Text>
-                <Text className="mt-1 text-sm text-[#B8D4BF]">
+                <Text className="font-sans text-lg font-bold text-white">{displayName}</Text>
+                <Text className="font-sans mt-1 text-sm text-[#B8D4BF]">
                   {hidden
                     ? "Balance hidden"
                     : `${pts} ${gameCurrencyLabel(mode, { short: true })}`}
                 </Text>
-                <Text className="mt-3 text-xs font-semibold uppercase text-[#6B9872]">
+                <Text className="font-sans mt-3 text-xs font-semibold uppercase text-[#6B9872]">
                   Challenges
                 </Text>
-                <Text className="text-sm text-white/80">
+                <Text className="font-sans text-sm text-white/80">
                   {chals.length ? chals.join(" · ") : "—"}
                 </Text>
-                <Text className="mt-2 text-xs font-semibold uppercase text-[#6B9872]">
+                <Text className="font-sans mt-2 text-xs font-semibold uppercase text-[#6B9872]">
                   Actions
                 </Text>
-                <Text className="text-sm text-white/80">
+                <Text className="font-sans text-sm text-white/80">
                   {actions.length ? actions.join(" · ") : "—"}
                 </Text>
-                <Text className="mt-2 text-xs font-semibold uppercase text-[#6B9872]">
+                <Text className="font-sans mt-2 text-xs font-semibold uppercase text-[#6B9872]">
                   Direct
                 </Text>
-                <Text className="text-sm text-white/80">
+                <Text className="font-sans text-sm text-white/80">
                   {directs.length ? directs.join(" · ") : "—"}
                 </Text>
               </View>

@@ -58,27 +58,27 @@ export default function WheelScreen() {
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <Ionicons name="chevron-back" size={22} color="#D4AF37" />
           </Pressable>
-          <Text className="flex-1 text-center text-lg font-bold text-white">
+          <Text className="font-sans flex-1 text-center text-lg font-bold text-white">
             {title}
           </Text>
           <View style={{ width: 22 }} />
         </View>
 
         <View className="flex-1 items-center justify-center px-8">
-          <Text className="mb-8 text-center text-[15px] leading-relaxed text-[#C8DCC9]">
+          <Text className="font-sans mb-8 text-center text-[15px] leading-relaxed text-[#C8DCC9]">
             {playerName
               ? `${playerName} must use the club shown below.`
               : "Spin for a random club."}
           </Text>
 
           <View className="mb-10 h-56 w-56 items-center justify-center rounded-full border-4 border-[#D4AF37]/40 bg-[#142918]">
-            <Text className="text-center text-5xl">🎯</Text>
+            <Text className="font-sans text-center text-5xl">🎯</Text>
             {pick ? (
-              <Text className="mt-4 text-center text-2xl font-black text-[#D4AF37]">
+              <Text className="font-sans mt-4 text-center text-2xl font-black text-[#D4AF37]">
                 {pick}
               </Text>
             ) : (
-              <Text className="mt-4 text-sm text-white/50">
+              <Text className="font-sans mt-4 text-sm text-white/50">
                 {spinning ? "Spinning…" : "Tap spin"}
               </Text>
             )}

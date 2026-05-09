@@ -172,7 +172,7 @@ export default function GameScreen() {
     return (
       <GolfChrome>
         <View className="flex-1 items-center justify-center">
-          <Text className="text-[#6B9872]">Loading game…</Text>
+          <Text className="font-sans text-[#6B9872]">Loading game…</Text>
         </View>
       </GolfChrome>
     );
@@ -186,10 +186,10 @@ export default function GameScreen() {
             <Ionicons name="chevron-back" size={22} color="#D4AF37" />
           </Pressable>
           <View className="flex-1 px-2">
-            <Text className="text-center text-lg font-bold text-white" numberOfLines={1}>
+            <Text className="font-sans text-center text-lg font-bold text-white" numberOfLines={1}>
               {lobbyName || game.name}
             </Text>
-            <Text className="text-center text-xs text-[#6B9872]">
+            <Text className="font-sans text-center text-xs text-[#6B9872]">
               Hole {game.currentHole}/{game.holes} · {gameModeName(game.mode)}
             </Text>
           </View>
@@ -200,12 +200,12 @@ export default function GameScreen() {
 
         <View className="flex-row items-center justify-between px-5 py-3">
           <View>
-            <Text className="text-[11px] uppercase tracking-wide text-[#6B9872]">
+            <Text className="font-sans text-[11px] uppercase tracking-wide text-[#6B9872]">
               Your balance
             </Text>
-            <Text className="text-2xl font-black text-[#D4AF37]">
+            <Text className="font-sans text-2xl font-black text-[#D4AF37]">
               {myPoints}{" "}
-              <Text className="text-sm font-semibold text-[#B8D4BF]">
+              <Text className="font-sans text-sm font-semibold text-[#B8D4BF]">
                 {gameCurrencyLabel(game.mode, { short: true })}
               </Text>
             </Text>
@@ -214,24 +214,24 @@ export default function GameScreen() {
             onPress={openScorecard}
             className="rounded-xl border border-[#2A5030] px-3 py-2"
           >
-            <Text className="text-xs font-bold text-white">Scorecard</Text>
+            <Text className="font-sans text-xs font-bold text-white">Scorecard</Text>
           </Pressable>
         </View>
 
         <ScrollView className="flex-1 px-5" contentContainerClassName="pb-28">
-          <Text className="mb-2 text-xs font-bold uppercase tracking-wide text-[#B8D4BF]">
+          <Text className="font-sans mb-2 text-xs font-bold uppercase tracking-wide text-[#B8D4BF]">
             Challenges
           </Text>
           {challenges.length === 0 ? (
-            <Text className="mb-6 text-sm text-white/60">No challenges yet.</Text>
+            <Text className="font-sans mb-6 text-sm text-white/60">No challenges yet.</Text>
           ) : (
             challenges.map((c, i) => (
               <View
                 key={`${String(c.id)}_${String(c.hole)}_${i}`}
                 className="mb-3 rounded-[14px] border border-[#2A5030] bg-[#142918]/95 p-3"
               >
-                <Text className="text-base font-bold text-white">{String(c.title)}</Text>
-                <Text className="mt-1 text-sm leading-snug text-white/75">
+                <Text className="font-sans text-base font-bold text-white">{String(c.title)}</Text>
+                <Text className="font-sans mt-1 text-sm leading-snug text-white/75">
                   {String(c.description)}
                 </Text>
                 <Pressable
@@ -239,7 +239,7 @@ export default function GameScreen() {
                   disabled={busy !== null}
                   className="mt-3 self-start rounded-lg bg-[#D4AF37] px-4 py-2"
                 >
-                  <Text className="text-sm font-bold text-[#071209]">
+                  <Text className="font-sans text-sm font-bold text-[#071209]">
                     {c.requiresWheelSpin ? "Spin wheel first" : "Claim"}
                   </Text>
                 </Pressable>
@@ -247,23 +247,23 @@ export default function GameScreen() {
             ))
           )}
 
-          <Text className="mb-2 mt-4 text-xs font-bold uppercase tracking-wide text-[#B8D4BF]">
+          <Text className="font-sans mb-2 mt-4 text-xs font-bold uppercase tracking-wide text-[#B8D4BF]">
             Action offers & inventory
           </Text>
           {actions.length === 0 ? (
-            <Text className="text-sm text-white/60">No action cards.</Text>
+            <Text className="font-sans text-sm text-white/60">No action cards.</Text>
           ) : (
             actions.map((c, i) => (
               <View
                 key={`a_${String(c.id)}_${i}`}
                 className="mb-2 rounded-xl border border-[#2A5030]/80 bg-[#0F1A12]/90 px-3 py-2"
               >
-                <Text className="font-semibold text-white">{String(c.title)}</Text>
+                <Text className="font-sans font-semibold text-white">{String(c.title)}</Text>
               </View>
             ))
           )}
 
-          <Text className="mb-2 mt-6 text-xs font-bold uppercase tracking-wide text-[#B8D4BF]">
+          <Text className="font-sans mb-2 mt-6 text-xs font-bold uppercase tracking-wide text-[#B8D4BF]">
             Recent feed
           </Text>
           {events.slice(0, 8).map((ev) => (
@@ -288,7 +288,7 @@ export default function GameScreen() {
               <AppButton variant="muted" label="End round" onPress={openEndGame} />
             </View>
           </View>
-          <Text className="mt-2 text-center text-[10px] text-white/35">
+          <Text className="font-sans mt-2 text-center text-[10px] text-white/35">
             Code {lobbyCode}
           </Text>
         </View>

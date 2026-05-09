@@ -7,7 +7,12 @@ module.exports = {
   ],
   presets: [require("nativewind/preset")],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        /** Loaded in app/_layout via @expo-google-fonts/roboto — single UI family */
+        sans: ["Roboto_400Regular", "sans-serif"],
+      },
+    },
   },
   plugins: [],
 };

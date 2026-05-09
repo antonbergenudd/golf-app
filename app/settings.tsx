@@ -13,13 +13,13 @@ export default function SettingsScreen() {
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <Ionicons name="chevron-back" size={22} color="#D4AF37" />
           </Pressable>
-          <Text className="flex-1 text-center text-lg font-bold text-white">
+          <Text className="font-sans flex-1 text-center text-lg font-bold text-white">
             Settings
           </Text>
           <View style={{ width: 22 }} />
         </View>
         <View className="flex-1 items-center justify-center px-8">
-          <Text className="text-center text-base text-white/70">
+          <Text className="font-sans text-center text-base text-white/70">
             Settings coming soon
           </Text>
         </View>

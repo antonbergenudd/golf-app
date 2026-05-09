@@ -18,5 +18,7 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: "#071209",
+    /** Clip fairway decor that sits past the viewport (negative left/right); avoids horizontal scroll on web. */
+    overflow: "hidden",
   },
 });
