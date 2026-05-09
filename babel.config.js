@@ -1,7 +1,8 @@
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: ["babel-preset-expo"],
-    plugins: ["nativewind/babel", require.resolve("expo-router/babel")],
+    // nativewind/babel returns { plugins: [...] } — it must be a preset, not a plugin.
+    // expo-router/babel is deprecated; babel-preset-expo enables Expo Router (SDK 50+).
+    presets: ["babel-preset-expo", "nativewind/babel"],
   };
 };
