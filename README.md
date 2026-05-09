@@ -15,9 +15,15 @@ npm install
 npm start
 ```
 
-After copying `.env.example` to `.env`, add your Supabase URL and anon key when you connect the backend.
+After copying `.env.example` to `.env`, add your Supabase URL and anon key.
+
+## Database
+
+Create your Supabase project, then run the SQL in `supabase/migrations/20260509140000_init.sql` in the Supabase SQL Editor (tables, permissive dev RLS policies, and realtime publication). Replace those policies with auth-aware rules before production.
 
 Then press `i` for iOS simulator, `a` for Android emulator, or scan the QR code with Expo Go.
+
+The app uses **file-based routing** via Expo Router (`app/` directory); `npm start` boots Metro as before.
 
 ## Documentation
 
