@@ -46,6 +46,7 @@ import { gameCurrencyLabel } from "@/models/gameMode";
 import { DatabaseService, databaseService } from "@/services/databaseService";
 import { Font } from "@/theme/fonts";
 import * as GameBlur from "@/utils/blurForModalWeb";
+import { gameActionError } from "@/utils/gameActionError";
 import {
   clearChallengeWheelLocalState,
   getChallengeWheelClub,
@@ -589,7 +590,7 @@ export default function GameScreen() {
     try {
       await databaseService.nextHole(gameId, game.playerIds);
     } catch (e) {
-      GameBlur.alertWeb("Hole", String(e));
+      GameBlur.alertWeb("Couldn't advance", gameActionError(e));
     } finally {
       setBusy(null);
     }
@@ -635,7 +636,7 @@ export default function GameScreen() {
         delete next[startKey];
         return next;
       });
-      GameBlur.alertWeb("Challenge", String(e));
+      GameBlur.alertWeb("Couldn't start that", gameActionError(e));
     }
   }
 
@@ -662,7 +663,7 @@ export default function GameScreen() {
         delete next[key];
         return next;
       });
-      GameBlur.alertWeb("Buy", String(e));
+      GameBlur.alertWeb("Couldn't buy", gameActionError(e));
     } finally {
       setBusy(null);
     }
@@ -677,7 +678,7 @@ export default function GameScreen() {
         await databaseService.rerollPlayerActions(gameId, playerId);
       }
     } catch (e) {
-      GameBlur.alertWeb("Reroll", String(e));
+      GameBlur.alertWeb("Couldn't reroll", gameActionError(e));
     } finally {
       setBusy(null);
     }
@@ -712,7 +713,7 @@ export default function GameScreen() {
           await databaseService.updateLobbyStatus(lobbyId, "completed");
         }
       } catch (e) {
-        GameBlur.alertWeb("End game", String(e));
+        GameBlur.alertWeb("Couldn't end the round", gameActionError(e));
         setBusy(null);
         return;
       }
@@ -771,7 +772,7 @@ export default function GameScreen() {
       });
       setScoreModalOpen(false);
     } catch (e) {
-      GameBlur.alertWeb("Could not save score", String(e));
+      GameBlur.alertWeb("Couldn't save your score", gameActionError(e));
     } finally {
       setScoreBusy(false);
     }

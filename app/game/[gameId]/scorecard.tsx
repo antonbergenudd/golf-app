@@ -22,6 +22,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
+import { gameActionError } from "@/utils/gameActionError";
 import { GameSessionSubscreenHeader } from "@/components/fairway/GameSessionSubscreenHeader";
 import { HoleScoreModal } from "@/components/fairway/HoleScoreModal";
 import {
@@ -269,7 +270,7 @@ export default function ScorecardScreen() {
       });
       setScoreModalOpen(false);
     } catch (e) {
-      Alert.alert("Could not save score", String(e));
+      Alert.alert("Could not save score", gameActionError(e));
     } finally {
       setScoreBusy(false);
     }

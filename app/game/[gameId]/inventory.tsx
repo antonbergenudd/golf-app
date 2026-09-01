@@ -22,6 +22,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
+import { gameActionError } from "@/utils/gameActionError";
 import { GameSessionSubscreenHeader } from "@/components/fairway/GameSessionSubscreenHeader";
 import { HoleScoreModal } from "@/components/fairway/HoleScoreModal";
 import {
@@ -226,7 +227,7 @@ export default function InventoryScreen() {
         setAttackFeedback(formatAttackOutcome(outcome, target.name));
         setSelectedId(null);
       } catch (e) {
-        Alert.alert("Inventory", String(e));
+        Alert.alert("Inventory", gameActionError(e));
       } finally {
         setBusy(false);
       }
@@ -255,7 +256,7 @@ export default function InventoryScreen() {
         });
         setSelectedId(null);
       } catch (e) {
-        Alert.alert("Inventory", String(e));
+        Alert.alert("Inventory", gameActionError(e));
       } finally {
         setBusy(false);
       }
@@ -316,7 +317,7 @@ export default function InventoryScreen() {
       });
       setTrialCombatStep(null);
     } catch (e) {
-      Alert.alert("Trial by combat", String(e));
+      Alert.alert("Trial by combat", gameActionError(e));
     } finally {
       setBusy(false);
     }
@@ -413,7 +414,7 @@ export default function InventoryScreen() {
       });
       setScoreModalOpen(false);
     } catch (e) {
-      Alert.alert("Could not save score", String(e));
+      Alert.alert("Could not save score", gameActionError(e));
     } finally {
       setScoreBusy(false);
     }
