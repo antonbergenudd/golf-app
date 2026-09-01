@@ -16,7 +16,11 @@ import { GolfChrome } from "@/components/fairway/GolfChrome";
 import { AppButton } from "@/components/ui/AppButton";
 import { Font } from "@/theme/fonts";
 import { databaseService } from "@/services/databaseService";
-import { saveGameSession, savePlayerName, loadSavedPlayerName } from "@/services/gameSession";
+import {
+  saveGameSession,
+  savePlayerName,
+  loadSavedPlayerName,
+} from "@/services/gameSession";
 import { alertWeb } from "@/utils/blurForModalWeb";
 import { formatDatabaseError } from "@/utils/formatDatabaseError";
 
@@ -115,7 +119,11 @@ export default function CreateLobbyScreen() {
               style={[styles.input, styles.inputLast]}
             />
 
-            <AppButton label="Create lobby" loading={loading} onPress={create} />
+            <AppButton
+              label="Create lobby"
+              loading={loading}
+              onPress={create}
+            />
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>

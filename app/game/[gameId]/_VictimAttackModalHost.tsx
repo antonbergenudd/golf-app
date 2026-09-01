@@ -6,13 +6,7 @@ import {
   useSegments,
 } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { databaseService } from "@/services/databaseService";
@@ -90,8 +84,12 @@ export function VictimAttackModalHost() {
 
   const sessionRef = useRef({ gameId: "", playerId: "" });
 
-  const resolvedGameId =
-    resolveSessionGameId({ local, global, pathname, segments }).trim();
+  const resolvedGameId = resolveSessionGameId({
+    local,
+    global,
+    pathname,
+    segments,
+  }).trim();
   const resolvedPlayerId =
     paramFirst(local.playerId) || paramFirst(global.playerId);
 
@@ -99,8 +97,7 @@ export function VictimAttackModalHost() {
   if (resolvedPlayerId) sessionRef.current.playerId = resolvedPlayerId;
 
   const gameId = resolvedGameId || sessionRef.current.gameId;
-  const playerIdFromParams =
-    resolvedPlayerId || sessionRef.current.playerId;
+  const playerIdFromParams = resolvedPlayerId || sessionRef.current.playerId;
 
   const [sessionPlayerId, setSessionPlayerId] = useState("");
   const [events, setEvents] = useState<Record<string, unknown>[]>([]);
@@ -111,8 +108,7 @@ export function VictimAttackModalHost() {
   const seenGameEventIdsRef = useRef<Set<string>>(new Set());
   const sessionStartMsRef = useRef(Date.now());
 
-  const effectivePlayerId =
-    playerIdFromParams.trim() || sessionPlayerId.trim();
+  const effectivePlayerId = playerIdFromParams.trim() || sessionPlayerId.trim();
 
   useEffect(() => {
     if (!gameId) {

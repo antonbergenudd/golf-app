@@ -52,11 +52,7 @@ export function VerificationNavButton({
         ) : null}
       </View>
       <Text
-        style={[
-          styles.navLabel,
-          active && styles.navLabelActive,
-          labelStyle,
-        ]}
+        style={[styles.navLabel, active && styles.navLabelActive, labelStyle]}
       >
         Verifications
       </Text>

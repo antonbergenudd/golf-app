@@ -12,7 +12,13 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import Svg, { Defs, G, LinearGradient as SvgLinearGradient, Stop, Text as SvgText } from "react-native-svg";
+import Svg, {
+  Defs,
+  G,
+  LinearGradient as SvgLinearGradient,
+  Stop,
+  Text as SvgText,
+} from "react-native-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { GolfChrome } from "@/components/fairway/GolfChrome";
@@ -117,52 +123,54 @@ export default function HomeScreen() {
         >
           <View style={styles.homeMainColumn}>
             <View style={styles.heroStack}>
-            <HeroEmblem />
-            <View style={{ height: 28 }} />
-            <Text style={styles.heroFairway}>Fairway</Text>
-            <View style={{ height: 6 }} />
-            <GradientTitle />
-            <View style={{ height: 14 }} />
-            <Text style={styles.heroBody}>
-              A laid-back party round with cards that bend the rules — easy to
-              scan, hard to put down.
-            </Text>
+              <HeroEmblem />
+              <View style={{ height: 28 }} />
+              <Text style={styles.heroFairway}>Fairway</Text>
+              <View style={{ height: 6 }} />
+              <GradientTitle />
+              <View style={{ height: 14 }} />
+              <Text style={styles.heroBody}>
+                A laid-back party round with cards that bend the rules — easy to
+                scan, hard to put down.
+              </Text>
             </View>
 
             {session != null && (
-            <>
-              <View style={{ height: 22 }} />
-              <ResumeSessionCard
-                session={session}
-                resuming={resuming}
-                onResume={resume}
-                onDismiss={dismissResume}
-              />
-            </>
+              <>
+                <View style={{ height: 22 }} />
+                <ResumeSessionCard
+                  session={session}
+                  resuming={resuming}
+                  onResume={resume}
+                  onDismiss={dismissResume}
+                />
+              </>
             )}
 
             <View style={{ height: 32 }} />
 
             <GameTile
-            variant="host"
-            title="Host a round"
-            subtitle="Create a lobby, share the code, deal the chaos."
-            hint="Best for the friend who brought the speaker"
-            onPress={() => router.push("/create")}
+              variant="host"
+              title="Host a round"
+              subtitle="Create a lobby, share the code, deal the chaos."
+              hint="Best for the friend who brought the speaker"
+              onPress={() => router.push("/create")}
             />
 
             <View style={{ height: 10 }} />
 
             <GameTile
-            variant="join"
-            title="Join with code"
-            subtitle="Already have a lobby? Slip in and grab your bag."
-            hint="Quick entry — no account drama"
-            onPress={() => router.push("/join")}
+              variant="join"
+              title="Join with code"
+              subtitle="Already have a lobby? Slip in and grab your bag."
+              hint="Quick entry — no account drama"
+              onPress={() => router.push("/join")}
             />
 
             <View style={{ height: 28 }} />
-            <Text style={styles.heroFooter}>Cards · twists · bragging rights</Text>
+            <Text style={styles.heroFooter}>
+              Cards · twists · bragging rights
+            </Text>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -300,7 +308,11 @@ function ResumeSessionCard({
             hitSlop={12}
             accessibilityLabel="Forget this round"
           >
-            <MaterialIcons name="close" size={22} color="rgba(255,255,255,0.45)" />
+            <MaterialIcons
+              name="close"
+              size={22}
+              color="rgba(255,255,255,0.45)"
+            />
           </Pressable>
         )}
       </View>

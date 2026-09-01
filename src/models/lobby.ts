@@ -30,7 +30,9 @@ function parseJoinedAt(raw: unknown): string {
   return new Date().toISOString();
 }
 
-export function lobbyPlayerFromJson(data: Record<string, unknown>): LobbyPlayer {
+export function lobbyPlayerFromJson(
+  data: Record<string, unknown>,
+): LobbyPlayer {
   return {
     id: String(data.id ?? ""),
     name: String(data.name ?? ""),
@@ -57,12 +59,20 @@ export function lobbyFromRow(id: string, row: Record<string, unknown>): Lobby {
     players,
     status: String(row.status ?? "waiting"),
     maxPlayers: Number(row.max_players ?? row.maxPlayers ?? 4),
-    createdAt: String(row.created_at ?? row.createdAt ?? new Date().toISOString()),
+    createdAt: String(
+      row.created_at ?? row.createdAt ?? new Date().toISOString(),
+    ),
     updatedAt: row.updated_at != null ? String(row.updated_at) : undefined,
-    gameId: row.game_id != null ? String(row.game_id) : (row.gameId as string | null) ?? null,
+    gameId:
+      row.game_id != null
+        ? String(row.game_id)
+        : ((row.gameId as string | null) ?? null),
     plannedHoles: Math.max(1, planned),
     plannedMode: parseGameMode(row.planned_mode ?? row.plannedMode),
-    startingPoints: Math.min(10, Math.max(0, Number.isFinite(startPts) ? startPts : 1)),
+    startingPoints: Math.min(
+      10,
+      Math.max(0, Number.isFinite(startPts) ? startPts : 1),
+    ),
   };
 }
 
@@ -75,7 +85,9 @@ export function lobbyPlayersToJson(players: LobbyPlayer[]): unknown[] {
   }));
 }
 
-export function lobbyToInsert(lobby: Omit<Lobby, "id">): Record<string, unknown> {
+export function lobbyToInsert(
+  lobby: Omit<Lobby, "id">,
+): Record<string, unknown> {
   return {
     code: lobby.code,
     name: lobby.name,

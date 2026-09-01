@@ -13,10 +13,7 @@ function pathnameOnly(path: string): string {
   } catch {
     const q = s.indexOf("?");
     const h = s.indexOf("#");
-    const cut = Math.min(
-      q >= 0 ? q : s.length,
-      h >= 0 ? h : s.length,
-    );
+    const cut = Math.min(q >= 0 ? q : s.length, h >= 0 ? h : s.length);
     return s.slice(0, cut);
   }
 }

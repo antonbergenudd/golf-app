@@ -1,7 +1,12 @@
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useLocalSearchParams, useGlobalSearchParams, usePathname, useSegments } from "expo-router";
+import {
+  useLocalSearchParams,
+  useGlobalSearchParams,
+  usePathname,
+  useSegments,
+} from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
@@ -23,7 +28,11 @@ import {
   useRegisterGameTabFab,
   type GameFabRegistration,
 } from "@/context/GameShellContext";
-import { isAttackActionCard, isChallengeCardType, isInventoryActionCard } from "@/models/card";
+import {
+  isAttackActionCard,
+  isChallengeCardType,
+  isInventoryActionCard,
+} from "@/models/card";
 import type { Lobby, LobbyPlayer } from "@/models/lobby";
 import { databaseService } from "@/services/databaseService";
 import { Font } from "@/theme/fonts";
@@ -134,8 +143,7 @@ export default function InventoryScreen() {
     () =>
       scoreRows.find(
         (r) =>
-          String(r.player_id) === playerId &&
-          Number(r.hole) === currentHole,
+          String(r.player_id) === playerId && Number(r.hole) === currentHole,
       ),
     [scoreRows, playerId, currentHole],
   );
@@ -166,9 +174,10 @@ export default function InventoryScreen() {
     return players.filter((pl) => pl.id !== playerId);
   }, [lobbySnap?.players, playerId]);
 
-  const [trialCombatStep, setTrialCombatStep] = useState<
-    null | { action: Record<string, unknown>; deputy?: LobbyPlayer }
-  >(null);
+  const [trialCombatStep, setTrialCombatStep] = useState<null | {
+    action: Record<string, unknown>;
+    deputy?: LobbyPlayer;
+  }>(null);
 
   const trialCombatChallengeOptions = useMemo(() => {
     const raw = (cardsDoc?.cards as Record<string, unknown>[]) ?? [];
@@ -345,27 +354,23 @@ export default function InventoryScreen() {
     }
     blurBeforeModalWeb();
     setDraftStrokes(
-      hasHoleScore && savedStrokesForHole != null
-        ? savedStrokesForHole
-        : 4,
+      hasHoleScore && savedStrokesForHole != null ? savedStrokesForHole : 4,
     );
     setScoreModalOpen(true);
   }, [gameId, hasHoleScore, savedStrokesForHole]);
 
   const fabRegistration: GameFabRegistration = useMemo(
     () => ({
-      digit:
-        !gameId ? "—" : hasHoleScore ? String(savedStrokesForHole!) : "—",
+      digit: !gameId ? "—" : hasHoleScore ? String(savedStrokesForHole!) : "—",
       scoredLook: Boolean(gameId && hasHoleScore),
       caption: "Score",
       captionEntered: Boolean(gameId && hasHoleScore),
       onPress: openScoreModal,
-      accessibilityLabel:
-        !gameId
-          ? "Score"
-          : hasHoleScore && savedStrokesForHole != null
-            ? `Score ${savedStrokesForHole} strokes, tap to edit`
-            : "Enter score for this hole",
+      accessibilityLabel: !gameId
+        ? "Score"
+        : hasHoleScore && savedStrokesForHole != null
+          ? `Score ${savedStrokesForHole} strokes, tap to edit`
+          : "Enter score for this hole",
     }),
     [gameId, hasHoleScore, savedStrokesForHole, openScoreModal],
   );
@@ -391,8 +396,7 @@ export default function InventoryScreen() {
         );
         const prior = prev.find(
           (r) =>
-            String(r.player_id) === playerId &&
-            Number(r.hole) === currentHole,
+            String(r.player_id) === playerId && Number(r.hole) === currentHole,
         );
         return [
           ...rest,
@@ -436,9 +440,7 @@ export default function InventoryScreen() {
           </View>
           <View style={styles.statsPills}>
             <View style={styles.statPill}>
-              <View
-                style={[styles.statIconWrap, styles.statIconAttack]}
-              >
+              <View style={[styles.statIconWrap, styles.statIconAttack]}>
                 <MaterialIcons
                   name="gps-fixed"
                   size={18}
@@ -449,9 +451,7 @@ export default function InventoryScreen() {
               <Text style={styles.statPillVal}>{attackCount}</Text>
             </View>
             <View style={styles.statPill}>
-              <View
-                style={[styles.statIconWrap, styles.statIconUtility]}
-              >
+              <View style={[styles.statIconWrap, styles.statIconUtility]}>
                 <MaterialIcons
                   name="shield"
                   size={18}
@@ -506,121 +506,115 @@ export default function InventoryScreen() {
             </View>
           ) : (
             inventoryCards.map((card) => {
-                  const id = String(card.id ?? "");
-                  const title = String(card.title ?? "Action");
-                  const description = String(card.description ?? "");
-                  const attack = isAttackActionCard(card);
-                  const selected = selectedId === id;
-                  const stars = starsFromPoints(card.points);
+              const id = String(card.id ?? "");
+              const title = String(card.title ?? "Action");
+              const description = String(card.description ?? "");
+              const attack = isAttackActionCard(card);
+              const selected = selectedId === id;
+              const stars = starsFromPoints(card.points);
 
-                  return (
-                    <Pressable
-                      key={id}
-                      onPress={() =>
-                        setSelectedId(selected ? null : id)
-                      }
-                      style={({ pressed }) => [
-                        pressed && styles.cardShellPressed,
-                      ]}
-                    >
+              return (
+                <Pressable
+                  key={id}
+                  onPress={() => setSelectedId(selected ? null : id)}
+                  style={({ pressed }) => [pressed && styles.cardShellPressed]}
+                >
+                  <View
+                    style={[
+                      styles.cardShell,
+                      attack ? styles.cardShellAttack : styles.cardShellUtility,
+                      selected && styles.cardShellSelected,
+                    ]}
+                  >
+                    <View style={styles.cardRow}>
                       <View
                         style={[
-                          styles.cardShell,
-                          attack ? styles.cardShellAttack : styles.cardShellUtility,
-                          selected && styles.cardShellSelected,
+                          styles.cardIconBg,
+                          selected
+                            ? styles.cardIconBgSelected
+                            : attack
+                              ? styles.cardIconBgAttack
+                              : styles.cardIconBgUtility,
                         ]}
                       >
-                      <View style={styles.cardRow}>
-                        <View
-                          style={[
-                            styles.cardIconBg,
+                        <MaterialIcons
+                          name={attack ? "bolt" : "eco"}
+                          size={28}
+                          color={
                             selected
-                              ? styles.cardIconBgSelected
+                              ? GolfColors.gold
                               : attack
-                                ? styles.cardIconBgAttack
-                                : styles.cardIconBgUtility,
-                          ]}
-                        >
-                          <MaterialIcons
-                            name={attack ? "bolt" : "eco"}
-                            size={28}
-                            color={
-                              selected
-                                ? GolfColors.gold
-                                : attack
-                                  ? GolfColors.danger
-                                  : GolfColors.mist
-                            }
-                          />
-                        </View>
-                        <View style={styles.cardBody}>
-                          <View style={styles.cardTitleRow}>
-                            <Text style={styles.cardTitle} numberOfLines={1}>
-                              {title}
-                            </Text>
-                            <View
+                                ? GolfColors.danger
+                                : GolfColors.mist
+                          }
+                        />
+                      </View>
+                      <View style={styles.cardBody}>
+                        <View style={styles.cardTitleRow}>
+                          <Text style={styles.cardTitle} numberOfLines={1}>
+                            {title}
+                          </Text>
+                          <View
+                            style={[
+                              styles.typeBadge,
+                              attack
+                                ? styles.typeBadgeAttack
+                                : styles.typeBadgeUtility,
+                            ]}
+                          >
+                            <Text
                               style={[
-                                styles.typeBadge,
+                                styles.typeBadgeText,
                                 attack
-                                  ? styles.typeBadgeAttack
-                                  : styles.typeBadgeUtility,
+                                  ? styles.typeBadgeTextAttack
+                                  : styles.typeBadgeTextUtility,
                               ]}
                             >
-                              <Text
-                                style={[
-                                  styles.typeBadgeText,
-                                  attack
-                                    ? styles.typeBadgeTextAttack
-                                    : styles.typeBadgeTextUtility,
-                                ]}
-                              >
-                                {attack ? "ATTACK" : "UTILITY"}
-                              </Text>
-                            </View>
-                          </View>
-                          <Text style={styles.cardDesc} numberOfLines={2}>
-                            {description}
-                          </Text>
-                          <View style={styles.starRow}>
-                            {[0, 1, 2].map((i) => (
-                              <MaterialIcons
-                                key={i}
-                                name={
-                                  i < stars ? "star" : "star-border"
-                                }
-                                size={12}
-                                color={
-                                  i < stars
-                                    ? selected
-                                      ? GolfColors.gold
-                                      : attack
-                                        ? GolfColors.danger
-                                        : GolfColors.mist
-                                    : "rgba(107,152,114,0.35)"
-                                }
-                              />
-                            ))}
+                              {attack ? "ATTACK" : "UTILITY"}
+                            </Text>
                           </View>
                         </View>
-                        {attack ? (
-                          <MaterialIcons
-                            name="gps-fixed"
-                            size={18}
-                            color="rgba(184,212,191,0.55)"
-                          />
-                        ) : null}
+                        <Text style={styles.cardDesc} numberOfLines={2}>
+                          {description}
+                        </Text>
+                        <View style={styles.starRow}>
+                          {[0, 1, 2].map((i) => (
+                            <MaterialIcons
+                              key={i}
+                              name={i < stars ? "star" : "star-border"}
+                              size={12}
+                              color={
+                                i < stars
+                                  ? selected
+                                    ? GolfColors.gold
+                                    : attack
+                                      ? GolfColors.danger
+                                      : GolfColors.mist
+                                  : "rgba(107,152,114,0.35)"
+                              }
+                            />
+                          ))}
+                        </View>
                       </View>
+                      {attack ? (
+                        <MaterialIcons
+                          name="gps-fixed"
+                          size={18}
+                          color="rgba(184,212,191,0.55)"
+                        />
+                      ) : null}
+                    </View>
 
-                      {selected ? (
-                        <View style={styles.cardExpand}>
-                          <Pressable
-                            onPress={(e) => {
-                              e.stopPropagation?.();
-                              handlePlayPress(card);
-                            }}
-                            disabled={Boolean(busy)}
-                          >
-                            {({ pressed }) => (
+                    {selected ? (
+                      <View style={styles.cardExpand}>
+                        <Pressable
+                          onPress={(e) => {
+                            e.stopPropagation?.();
+                            handlePlayPress(card);
+                          }}
+                          disabled={Boolean(busy)}
+                        >
+                          {({ pressed }) => (
                             <View
                               style={[
                                 styles.playBtn,
@@ -631,84 +625,200 @@ export default function InventoryScreen() {
                                 pressed && !busy && { opacity: 0.92 },
                               ]}
                             >
-                            <Ionicons
-                              name="play"
-                              size={20}
-                              color={
-                                attack ? "#FFFFFF" : GolfColors.forestDeep
-                              }
-                            />
-                            <Text
-                              style={[
-                                styles.playBtnText,
-                                attack && styles.playBtnTextLight,
-                              ]}
-                            >
-                              {attack
-                                ? String(card.id) === "action_041"
-                                  ? "Set up trial"
-                                  : "Select target"
-                                : "Play card"}
-                            </Text>
+                              <Ionicons
+                                name="play"
+                                size={20}
+                                color={
+                                  attack ? "#FFFFFF" : GolfColors.forestDeep
+                                }
+                              />
+                              <Text
+                                style={[
+                                  styles.playBtnText,
+                                  attack && styles.playBtnTextLight,
+                                ]}
+                              >
+                                {attack
+                                  ? String(card.id) === "action_041"
+                                    ? "Set up trial"
+                                    : "Select target"
+                                  : "Play card"}
+                              </Text>
                             </View>
-                            )}
-                          </Pressable>
-                        </View>
-                      ) : null}
+                          )}
+                        </Pressable>
                       </View>
-                    </Pressable>
-                  );
-                })
-            )}
+                    ) : null}
+                  </View>
+                </Pressable>
+              );
+            })
+          )}
         </ScrollView>
 
-      <Modal
-        visible={targetModal !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setTargetModal(null)}
-        onShow={blurBeforeModalWeb}
-      >
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={() => setTargetModal(null)}
+        <Modal
+          visible={targetModal !== null}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setTargetModal(null)}
+          onShow={blurBeforeModalWeb}
         >
           <Pressable
-            style={styles.modalSheet}
-            onPress={(e) => e.stopPropagation()}
+            style={styles.modalBackdrop}
+            onPress={() => setTargetModal(null)}
           >
-            <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalKicker}>Playing</Text>
-                <Text style={styles.modalTitle}>
-                  {targetModal
-                    ? String(targetModal.title ?? "Action")
-                    : ""}
-                </Text>
+            <Pressable
+              style={styles.modalSheet}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.modalHeader}>
+                <View>
+                  <Text style={styles.modalKicker}>Playing</Text>
+                  <Text style={styles.modalTitle}>
+                    {targetModal ? String(targetModal.title ?? "Action") : ""}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => setTargetModal(null)}
+                  hitSlop={10}
+                  style={styles.modalClose}
+                >
+                  <MaterialIcons
+                    name="close"
+                    size={22}
+                    color={GolfColors.mist}
+                  />
+                </Pressable>
               </View>
-              <Pressable
-                onPress={() => setTargetModal(null)}
-                hitSlop={10}
-                style={styles.modalClose}
-              >
-                <MaterialIcons name="close" size={22} color={GolfColors.mist} />
-              </Pressable>
-            </View>
-            <Text style={styles.modalHint}>Select a target player:</Text>
-            {targetCandidates.length === 0 ? (
-              <Text style={styles.modalEmpty}>
-                No other players in this lobby yet.
+              <Text style={styles.modalHint}>Select a target player:</Text>
+              {targetCandidates.length === 0 ? (
+                <Text style={styles.modalEmpty}>
+                  No other players in this lobby yet.
+                </Text>
+              ) : (
+                targetCandidates.map((pl) => (
+                  <Pressable
+                    key={pl.id}
+                    onPress={() => {
+                      const c = targetModal;
+                      setTargetModal(null);
+                      if (c) void playAttackCard(c, pl);
+                    }}
+                    disabled={Boolean(busy)}
+                    style={({ pressed }) => [
+                      styles.targetRow,
+                      pressed && { opacity: 0.9 },
+                    ]}
+                  >
+                    <View style={styles.targetAvatar}>
+                      <Text style={styles.targetAvatarText}>
+                        {(pl.name || "?").slice(0, 1).toUpperCase()}
+                      </Text>
+                    </View>
+                    <Text style={styles.targetName}>{pl.name}</Text>
+                    <MaterialIcons
+                      name="gps-fixed"
+                      size={18}
+                      color={GolfColors.danger}
+                      style={{ marginLeft: "auto" }}
+                    />
+                  </Pressable>
+                ))
+              )}
+            </Pressable>
+          </Pressable>
+        </Modal>
+
+        <Modal
+          visible={attackFeedback !== null}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setAttackFeedback(null)}
+        >
+          <Pressable
+            style={styles.attackFeedbackBackdrop}
+            onPress={() => setAttackFeedback(null)}
+          >
+            <Pressable
+              style={[
+                styles.modalSheet,
+                attackFeedback?.tone === "celebrate" &&
+                  styles.attackSheetCelebrate,
+                attackFeedback?.tone === "oops" && styles.attackSheetOops,
+              ]}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <Text style={styles.modalKicker}>Attack result</Text>
+              <Text style={styles.attackResultTitle}>
+                {attackFeedback?.title ?? ""}
               </Text>
-            ) : (
-              targetCandidates.map((pl) => (
+              <Text style={styles.attackResultBody}>
+                {attackFeedback?.body ?? ""}
+              </Text>
+              <Pressable
+                style={styles.attackResultDone}
+                onPress={() => setAttackFeedback(null)}
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss"
+              >
+                <Text style={styles.attackResultDoneText}>OK</Text>
+              </Pressable>
+            </Pressable>
+          </Pressable>
+        </Modal>
+
+        <Modal
+          visible={
+            trialCombatStep !== null && trialCombatStep.deputy === undefined
+          }
+          transparent
+          animationType="fade"
+          onRequestClose={() => setTrialCombatStep(null)}
+          onShow={blurBeforeModalWeb}
+        >
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setTrialCombatStep(null)}
+          >
+            <Pressable
+              style={styles.modalSheet}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.modalHeader}>
+                <View>
+                  <Text style={styles.modalKicker}>Trial by combat</Text>
+                  <Text style={styles.modalTitle}>
+                    {trialCombatStep
+                      ? String(trialCombatStep.action.title ?? "Action")
+                      : ""}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => setTrialCombatStep(null)}
+                  hitSlop={10}
+                  style={styles.modalClose}
+                >
+                  <MaterialIcons
+                    name="close"
+                    size={22}
+                    color={GolfColors.mist}
+                  />
+                </Pressable>
+              </View>
+              <Text style={styles.modalHint}>
+                Who performs your challenge for you?
+              </Text>
+              {targetCandidates.map((pl) => (
                 <Pressable
                   key={pl.id}
                   onPress={() => {
-                    const c = targetModal;
-                    setTargetModal(null);
-                    if (c) void playAttackCard(c, pl);
+                    if (!trialCombatStep) return;
+                    setTrialCombatStep({
+                      action: trialCombatStep.action,
+                      deputy: pl,
+                    });
                   }}
-                  disabled={Boolean(busy)}
+                  disabled={typeof busy === "string" || busy === true}
                   style={({ pressed }) => [
                     styles.targetRow,
                     pressed && { opacity: 0.9 },
@@ -721,216 +831,114 @@ export default function InventoryScreen() {
                   </View>
                   <Text style={styles.targetName}>{pl.name}</Text>
                   <MaterialIcons
-                    name="gps-fixed"
+                    name="person"
                     size={18}
-                    color={GolfColors.danger}
+                    color={GolfColors.gold}
                     style={{ marginLeft: "auto" }}
                   />
                 </Pressable>
-              ))
-            )}
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      <Modal
-        visible={attackFeedback !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setAttackFeedback(null)}
-      >
-        <Pressable
-          style={styles.attackFeedbackBackdrop}
-          onPress={() => setAttackFeedback(null)}
-        >
-          <Pressable
-            style={[
-              styles.modalSheet,
-              attackFeedback?.tone === "celebrate" && styles.attackSheetCelebrate,
-              attackFeedback?.tone === "oops" && styles.attackSheetOops,
-            ]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <Text style={styles.modalKicker}>Attack result</Text>
-            <Text style={styles.attackResultTitle}>
-              {attackFeedback?.title ?? ""}
-            </Text>
-            <Text style={styles.attackResultBody}>{attackFeedback?.body ?? ""}</Text>
-            <Pressable
-              style={styles.attackResultDone}
-              onPress={() => setAttackFeedback(null)}
-              accessibilityRole="button"
-              accessibilityLabel="Dismiss"
-            >
-              <Text style={styles.attackResultDoneText}>OK</Text>
+              ))}
             </Pressable>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </Modal>
 
-      <Modal
-        visible={trialCombatStep !== null && trialCombatStep.deputy === undefined}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setTrialCombatStep(null)}
-        onShow={blurBeforeModalWeb}
-      >
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={() => setTrialCombatStep(null)}
-        >
-          <Pressable
-            style={styles.modalSheet}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalKicker}>Trial by combat</Text>
-                <Text style={styles.modalTitle}>
-                  {trialCombatStep
-                    ? String(trialCombatStep.action.title ?? "Action")
-                    : ""}
-                </Text>
-              </View>
-              <Pressable
-                onPress={() => setTrialCombatStep(null)}
-                hitSlop={10}
-                style={styles.modalClose}
-              >
-                <MaterialIcons name="close" size={22} color={GolfColors.mist} />
-              </Pressable>
-            </View>
-            <Text style={styles.modalHint}>
-              Who performs your challenge for you?
-            </Text>
-            {targetCandidates.map((pl) => (
-              <Pressable
-                key={pl.id}
-                onPress={() => {
-                  if (!trialCombatStep) return;
-                  setTrialCombatStep({ action: trialCombatStep.action, deputy: pl });
-                }}
-                disabled={typeof busy === "string" || busy === true}
-                style={({ pressed }) => [
-                  styles.targetRow,
-                  pressed && { opacity: 0.9 },
-                ]}
-              >
-                <View style={styles.targetAvatar}>
-                  <Text style={styles.targetAvatarText}>
-                    {(pl.name || "?").slice(0, 1).toUpperCase()}
-                  </Text>
-                </View>
-                <Text style={styles.targetName}>{pl.name}</Text>
-                <MaterialIcons
-                  name="person"
-                  size={18}
-                  color={GolfColors.gold}
-                  style={{ marginLeft: "auto" }}
-                />
-              </Pressable>
-            ))}
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      <Modal
-        visible={
-          trialCombatStep !== null && trialCombatStep.deputy !== undefined
-        }
-        transparent
-        animationType="fade"
-        onRequestClose={() =>
-          setTrialCombatStep((s) =>
-            s ? { action: s.action } : null,
-          )
-        }
-        onShow={blurBeforeModalWeb}
-      >
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={() =>
+        <Modal
+          visible={
+            trialCombatStep !== null && trialCombatStep.deputy !== undefined
+          }
+          transparent
+          animationType="fade"
+          onRequestClose={() =>
             setTrialCombatStep((s) => (s ? { action: s.action } : null))
           }
+          onShow={blurBeforeModalWeb}
         >
           <Pressable
-            style={styles.modalSheet}
-            onPress={(e) => e.stopPropagation()}
+            style={styles.modalBackdrop}
+            onPress={() =>
+              setTrialCombatStep((s) => (s ? { action: s.action } : null))
+            }
           >
-            <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalKicker}>Trial by combat</Text>
-                <Text style={styles.modalTitle}>Choose challenge</Text>
-              </View>
-              <Pressable
-                onPress={() =>
-                  setTrialCombatStep((s) =>
-                    s ? { action: s.action } : null,
-                  )
-                }
-                hitSlop={10}
-                style={styles.modalClose}
-              >
-                <MaterialIcons name="close" size={22} color={GolfColors.mist} />
-              </Pressable>
-            </View>
-            <Text style={styles.modalHint}>
-              Fighter: {trialCombatStep?.deputy?.name ?? ""}
-            </Text>
-            {trialCombatChallengeOptions.length === 0 ? (
-              <Text style={styles.modalEmpty}>
-                No eligible challenges on this hole.
-              </Text>
-            ) : (
-              trialCombatChallengeOptions.map((ch) => (
+            <Pressable
+              style={styles.modalSheet}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.modalHeader}>
+                <View>
+                  <Text style={styles.modalKicker}>Trial by combat</Text>
+                  <Text style={styles.modalTitle}>Choose challenge</Text>
+                </View>
                 <Pressable
-                  key={String(ch.id)}
-                  onPress={() => {
-                    const step = trialCombatStep;
-                    if (!step?.deputy || busy) return;
-                    void completeTrialCombat(
-                      step.action,
-                      step.deputy,
-                      String(ch.id ?? ""),
-                    );
-                  }}
-                  disabled={typeof busy === "string" || busy === true}
-                  style={({ pressed }) => [
-                    styles.targetRow,
-                    pressed && { opacity: 0.9 },
-                  ]}
+                  onPress={() =>
+                    setTrialCombatStep((s) => (s ? { action: s.action } : null))
+                  }
+                  hitSlop={10}
+                  style={styles.modalClose}
                 >
                   <MaterialIcons
-                    name="emoji-events"
-                    size={20}
-                    color={GolfColors.gold}
-                  />
-                  <Text style={styles.targetName} numberOfLines={2}>
-                    {String(ch.title ?? "Challenge")}
-                  </Text>
-                  <MaterialIcons
-                    name="chevron-right"
-                    size={20}
+                    name="close"
+                    size={22}
                     color={GolfColors.mist}
-                    style={{ marginLeft: "auto" }}
                   />
                 </Pressable>
-              ))
-            )}
+              </View>
+              <Text style={styles.modalHint}>
+                Fighter: {trialCombatStep?.deputy?.name ?? ""}
+              </Text>
+              {trialCombatChallengeOptions.length === 0 ? (
+                <Text style={styles.modalEmpty}>
+                  No eligible challenges on this hole.
+                </Text>
+              ) : (
+                trialCombatChallengeOptions.map((ch) => (
+                  <Pressable
+                    key={String(ch.id)}
+                    onPress={() => {
+                      const step = trialCombatStep;
+                      if (!step?.deputy || busy) return;
+                      void completeTrialCombat(
+                        step.action,
+                        step.deputy,
+                        String(ch.id ?? ""),
+                      );
+                    }}
+                    disabled={typeof busy === "string" || busy === true}
+                    style={({ pressed }) => [
+                      styles.targetRow,
+                      pressed && { opacity: 0.9 },
+                    ]}
+                  >
+                    <MaterialIcons
+                      name="emoji-events"
+                      size={20}
+                      color={GolfColors.gold}
+                    />
+                    <Text style={styles.targetName} numberOfLines={2}>
+                      {String(ch.title ?? "Challenge")}
+                    </Text>
+                    <MaterialIcons
+                      name="chevron-right"
+                      size={20}
+                      color={GolfColors.mist}
+                      style={{ marginLeft: "auto" }}
+                    />
+                  </Pressable>
+                ))
+              )}
+            </Pressable>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </Modal>
 
-      <HoleScoreModal
-        visible={scoreModalOpen && gameId !== ""}
-        holeNumber={currentHole}
-        strokes={draftStrokes}
-        onChangeStrokes={setDraftStrokes}
-        onClose={() => setScoreModalOpen(false)}
-        onSubmit={() => void submitHoleScore()}
-        busy={scoreBusy}
-      />
-    </SafeAreaView>
+        <HoleScoreModal
+          visible={scoreModalOpen && gameId !== ""}
+          holeNumber={currentHole}
+          strokes={draftStrokes}
+          onChangeStrokes={setDraftStrokes}
+          onClose={() => setScoreModalOpen(false)}
+          onSubmit={() => void submitHoleScore()}
+          busy={scoreBusy}
+        />
+      </SafeAreaView>
     </View>
   );
 }

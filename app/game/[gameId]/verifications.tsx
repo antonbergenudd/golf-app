@@ -67,15 +67,10 @@ export default function VerificationsScreen() {
   const pathGameId = pathname.match(/\/game\/([^/]+)/)?.[1] ?? "";
 
   const gameId =
-    paramFirst(local.gameId) ||
-    paramFirst(global.gameId) ||
-    pathGameId;
-  const playerId =
-    paramFirst(local.playerId) || paramFirst(global.playerId);
+    paramFirst(local.gameId) || paramFirst(global.gameId) || pathGameId;
+  const playerId = paramFirst(local.playerId) || paramFirst(global.playerId);
   const playerName =
-    paramFirst(local.playerName) ||
-    paramFirst(global.playerName) ||
-    "Player";
+    paramFirst(local.playerName) || paramFirst(global.playerName) || "Player";
 
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -132,10 +127,7 @@ export default function VerificationsScreen() {
   );
 
   const resolveVerification = useCallback(
-    async (
-      verificationId: string,
-      outcome: "succeeded" | "failed",
-    ) => {
+    async (verificationId: string, outcome: "succeeded" | "failed") => {
       if (!gameId || !playerId) return;
       setBusyId(verificationId);
       try {
@@ -169,8 +161,7 @@ export default function VerificationsScreen() {
     () =>
       scoreRows.find(
         (r) =>
-          String(r.player_id) === playerId &&
-          Number(r.hole) === currentHole,
+          String(r.player_id) === playerId && Number(r.hole) === currentHole,
       ),
     [scoreRows, playerId, currentHole],
   );
@@ -195,9 +186,7 @@ export default function VerificationsScreen() {
     }
     blurActiveElementForModalWeb();
     setDraftStrokes(
-      hasHoleScore && savedStrokesForHole != null
-        ? savedStrokesForHole
-        : 4,
+      hasHoleScore && savedStrokesForHole != null ? savedStrokesForHole : 4,
     );
     setScoreModalOpen(true);
   }, [gameId, hasHoleScore, savedStrokesForHole]);
@@ -209,12 +198,11 @@ export default function VerificationsScreen() {
       caption: "Score",
       captionEntered: Boolean(gameId && hasHoleScore),
       onPress: openScoreModal,
-      accessibilityLabel:
-        !gameId
-          ? "Score"
-          : hasHoleScore && savedStrokesForHole != null
-            ? `Score ${savedStrokesForHole} strokes, tap to edit`
-            : "Enter score for this hole",
+      accessibilityLabel: !gameId
+        ? "Score"
+        : hasHoleScore && savedStrokesForHole != null
+          ? `Score ${savedStrokesForHole} strokes, tap to edit`
+          : "Enter score for this hole",
     }),
     [gameId, hasHoleScore, savedStrokesForHole, openScoreModal],
   );
@@ -336,143 +324,137 @@ export default function VerificationsScreen() {
             </View>
           ) : (
             sorted.map((row) => {
-                  const id = String(row.id ?? "");
-                  const status = String(row.status ?? "");
-                  const pending = status === "pending";
-                  const claimantId = String(row.claimant_id ?? "");
-                  const claimantName = String(row.claimant_name ?? "Player");
-                  const title = String(row.challenge_title ?? "Challenge");
-                  const description = String(
-                    row.challenge_description ?? "",
-                  ).trim();
-                  const hole = Number(row.hole ?? 1);
-                  const pts = Number(row.points_to_award ?? 0);
-                  const verifierName = String(row.verifier_name ?? "");
-                  const deputyN = String(row.deputy_name ?? "");
-                  const canConfirm =
-                    pending && claimantId !== playerId && playerId !== "";
-                  const isOwnRequest = pending && claimantId === playerId;
-                  const busy = busyId === id;
+              const id = String(row.id ?? "");
+              const status = String(row.status ?? "");
+              const pending = status === "pending";
+              const claimantId = String(row.claimant_id ?? "");
+              const claimantName = String(row.claimant_name ?? "Player");
+              const title = String(row.challenge_title ?? "Challenge");
+              const description = String(
+                row.challenge_description ?? "",
+              ).trim();
+              const hole = Number(row.hole ?? 1);
+              const pts = Number(row.points_to_award ?? 0);
+              const verifierName = String(row.verifier_name ?? "");
+              const deputyN = String(row.deputy_name ?? "");
+              const canConfirm =
+                pending && claimantId !== playerId && playerId !== "";
+              const isOwnRequest = pending && claimantId === playerId;
+              const busy = busyId === id;
 
-                  return (
-                    <View key={id} style={styles.card}>
-                      <View style={styles.cardTop}>
-                        <Text style={styles.cardTitle} numberOfLines={2}>
-                          {title}
-                        </Text>
-                        <View
-                          style={[
-                            styles.statusPill,
-                            pending
-                              ? styles.statusPending
-                              : status === "confirmed"
-                                ? styles.statusOk
-                                : status === "failed"
-                                  ? styles.statusFail
-                                  : styles.statusMuted,
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.statusPillText,
-                              pending && styles.statusPillTextPending,
-                              status === "confirmed" && styles.statusPillTextOk,
-                              status === "failed" && styles.statusPillTextFail,
-                            ]}
-                          >
-                            {pending
-                              ? "Pending"
-                              : status === "confirmed"
-                                ? "Succeeded"
-                                : status === "failed"
-                                  ? "Failed"
-                                  : status === "cancelled"
-                                    ? "Cancelled"
-                                    : status}
-                          </Text>
-                        </View>
-                      </View>
-                      {description ? (
-                        <Text style={styles.cardDescription}>{description}</Text>
-                      ) : null}
-                      <Text style={styles.cardMeta}>
-                        Hole {hole}
-                        {Number.isFinite(pts) && pts > 0
-                          ? ` · +${pts} pts`
-                          : ""}
+              return (
+                <View key={id} style={styles.card}>
+                  <View style={styles.cardTop}>
+                    <Text style={styles.cardTitle} numberOfLines={2}>
+                      {title}
+                    </Text>
+                    <View
+                      style={[
+                        styles.statusPill,
+                        pending
+                          ? styles.statusPending
+                          : status === "confirmed"
+                            ? styles.statusOk
+                            : status === "failed"
+                              ? styles.statusFail
+                              : styles.statusMuted,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusPillText,
+                          pending && styles.statusPillTextPending,
+                          status === "confirmed" && styles.statusPillTextOk,
+                          status === "failed" && styles.statusPillTextFail,
+                        ]}
+                      >
+                        {pending
+                          ? "Pending"
+                          : status === "confirmed"
+                            ? "Succeeded"
+                            : status === "failed"
+                              ? "Failed"
+                              : status === "cancelled"
+                                ? "Cancelled"
+                                : status}
                       </Text>
-                      <Text style={styles.cardWho}>
-                        Requested by {claimantName}
-                      </Text>
-                      {deputyN ? (
-                        <Text style={styles.cardFighter}>
-                          Fighter: {deputyN}
-                        </Text>
-                      ) : null}
-                      {status === "confirmed" && verifierName ? (
-                        <Text style={styles.cardFoot}>
-                          Succeeded · {verifierName}
-                        </Text>
-                      ) : null}
-                      {status === "failed" && verifierName ? (
-                        <Text style={styles.cardFoot}>
-                          Failed · {verifierName}
-                        </Text>
-                      ) : null}
-                      {canConfirm ? (
-                        <View style={styles.actionRow}>
-                          {busy ? (
-                            <ActivityIndicator
-                              color={GolfColors.gold}
-                              style={styles.actionBusy}
-                            />
-                          ) : (
-                            <>
-                              <Pressable
-                                style={({ pressed }) => [
-                                  styles.outcomeBtn,
-                                  styles.outcomeBtnFail,
-                                  pressed && styles.outcomeBtnPressed,
-                                ]}
-                                onPress={() =>
-                                  void resolveVerification(id, "failed")
-                                }
-                                accessibilityRole="button"
-                                accessibilityLabel={`Mark challenge failed for ${claimantName}`}
-                              >
-                                <Text style={styles.outcomeBtnFailText}>
-                                  Failed
-                                </Text>
-                              </Pressable>
-                              <Pressable
-                                style={({ pressed }) => [
-                                  styles.outcomeBtn,
-                                  styles.outcomeBtnOk,
-                                  pressed && styles.outcomeBtnPressed,
-                                ]}
-                                onPress={() =>
-                                  void resolveVerification(id, "succeeded")
-                                }
-                                accessibilityRole="button"
-                                accessibilityLabel={`Mark challenge succeeded for ${claimantName}`}
-                              >
-                                <Text style={styles.outcomeBtnOkText}>
-                                  Succeeded
-                                </Text>
-                              </Pressable>
-                            </>
-                          )}
-                        </View>
-                      ) : null}
-                      {isOwnRequest ? (
-                        <Text style={styles.waitingNote}>
-                          Waiting for another player to mark succeeded or failed.
-                        </Text>
-                      ) : null}
                     </View>
-                  );
-                })
-            )}
+                  </View>
+                  {description ? (
+                    <Text style={styles.cardDescription}>{description}</Text>
+                  ) : null}
+                  <Text style={styles.cardMeta}>
+                    Hole {hole}
+                    {Number.isFinite(pts) && pts > 0 ? ` · +${pts} pts` : ""}
+                  </Text>
+                  <Text style={styles.cardWho}>
+                    Requested by {claimantName}
+                  </Text>
+                  {deputyN ? (
+                    <Text style={styles.cardFighter}>Fighter: {deputyN}</Text>
+                  ) : null}
+                  {status === "confirmed" && verifierName ? (
+                    <Text style={styles.cardFoot}>
+                      Succeeded · {verifierName}
+                    </Text>
+                  ) : null}
+                  {status === "failed" && verifierName ? (
+                    <Text style={styles.cardFoot}>Failed · {verifierName}</Text>
+                  ) : null}
+                  {canConfirm ? (
+                    <View style={styles.actionRow}>
+                      {busy ? (
+                        <ActivityIndicator
+                          color={GolfColors.gold}
+                          style={styles.actionBusy}
+                        />
+                      ) : (
+                        <>
+                          <Pressable
+                            style={({ pressed }) => [
+                              styles.outcomeBtn,
+                              styles.outcomeBtnFail,
+                              pressed && styles.outcomeBtnPressed,
+                            ]}
+                            onPress={() =>
+                              void resolveVerification(id, "failed")
+                            }
+                            accessibilityRole="button"
+                            accessibilityLabel={`Mark challenge failed for ${claimantName}`}
+                          >
+                            <Text style={styles.outcomeBtnFailText}>
+                              Failed
+                            </Text>
+                          </Pressable>
+                          <Pressable
+                            style={({ pressed }) => [
+                              styles.outcomeBtn,
+                              styles.outcomeBtnOk,
+                              pressed && styles.outcomeBtnPressed,
+                            ]}
+                            onPress={() =>
+                              void resolveVerification(id, "succeeded")
+                            }
+                            accessibilityRole="button"
+                            accessibilityLabel={`Mark challenge succeeded for ${claimantName}`}
+                          >
+                            <Text style={styles.outcomeBtnOkText}>
+                              Succeeded
+                            </Text>
+                          </Pressable>
+                        </>
+                      )}
+                    </View>
+                  ) : null}
+                  {isOwnRequest ? (
+                    <Text style={styles.waitingNote}>
+                      Waiting for another player to mark succeeded or failed.
+                    </Text>
+                  ) : null}
+                </View>
+              );
+            })
+          )}
         </ScrollView>
       </SafeAreaView>
 

@@ -81,10 +81,7 @@ export function GameSessionTabBar({
 
   return (
     <View
-      style={[
-        styles.bottomNav,
-        { paddingBottom: Math.max(insets.bottom, 10) },
-      ]}
+      style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 10) }]}
     >
       <Pressable
         style={styles.navItem}
@@ -143,9 +140,7 @@ export function GameSessionTabBar({
 
       <View style={styles.fabSlot}>
         <Pressable
-          style={({ pressed }) => [
-            pressed && styles.fabOuterPressed,
-          ]}
+          style={({ pressed }) => [pressed && styles.fabOuterPressed]}
           onPress={fab.onPress}
           accessibilityLabel={fab.accessibilityLabel}
           accessibilityRole="button"

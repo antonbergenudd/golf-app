@@ -76,7 +76,9 @@ export default function EndGameScreen() {
     return (
       <GolfChrome>
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="font-sans text-center text-[#FF5252]">{loadError}</Text>
+          <Text className="font-sans text-center text-[#FF5252]">
+            {loadError}
+          </Text>
         </View>
       </GolfChrome>
     );

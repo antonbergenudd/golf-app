@@ -21,11 +21,7 @@ export function blurIfFocusInsideAriaHiddenAncestorsWeb() {
   if (Platform.OS !== "web") return;
   if (typeof document === "undefined") return;
   const el = document.activeElement as HTMLElement | null;
-  if (
-    !el ||
-    el === document.body ||
-    el === document.documentElement
-  ) {
+  if (!el || el === document.body || el === document.documentElement) {
     return;
   }
   let node: HTMLElement | null = el;

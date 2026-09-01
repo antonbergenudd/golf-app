@@ -122,10 +122,8 @@ export function buildLiveEventCopy(ev: Record<string, unknown>): LiveEventCopy {
 
   switch (type) {
     case "challenge_verification_requested": {
-      const title =
-        d.title != null ? String(d.title) : "Challenge";
-      const deputy =
-        d.deputyName != null ? String(d.deputyName) : "";
+      const title = d.title != null ? String(d.title) : "Challenge";
+      const deputy = d.deputyName != null ? String(d.deputyName) : "";
       if (deputy) {
         return {
           kind: "player",
@@ -144,8 +142,7 @@ export function buildLiveEventCopy(ev: Record<string, unknown>): LiveEventCopy {
     }
     case "challenge_claimed": {
       const pts = Number(d.pointsAwarded ?? 0);
-      const verifiedBy =
-        d.verifiedBy != null ? String(d.verifiedBy) : "";
+      const verifiedBy = d.verifiedBy != null ? String(d.verifiedBy) : "";
       if (pts > 0 && verifiedBy) {
         return {
           kind: "player",
@@ -170,8 +167,7 @@ export function buildLiveEventCopy(ev: Record<string, unknown>): LiveEventCopy {
       };
     }
     case "challenge_verification_confirmed": {
-      const title =
-        d.title != null ? String(d.title) : "Challenge";
+      const title = d.title != null ? String(d.title) : "Challenge";
       return {
         kind: "player",
         name,
@@ -180,8 +176,7 @@ export function buildLiveEventCopy(ev: Record<string, unknown>): LiveEventCopy {
       };
     }
     case "challenge_verification_failed": {
-      const title =
-        d.title != null ? String(d.title) : "Challenge";
+      const title = d.title != null ? String(d.title) : "Challenge";
       return {
         kind: "player",
         name,

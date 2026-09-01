@@ -18,10 +18,7 @@ export type GameFabRegistration = {
 };
 
 export type GameTabRouteName =
-  | "index"
-  | "inventory"
-  | "scorecard"
-  | "verifications";
+  "index" | "inventory" | "scorecard" | "verifications";
 
 type GameShellValue = {
   setFabForRoute: (route: GameTabRouteName, reg: GameFabRegistration) => void;

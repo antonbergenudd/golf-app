@@ -1,7 +1,4 @@
-import {
-  type GameMode,
-  gameModeValue,
-} from "../models/gameMode";
+import { type GameMode, gameModeValue } from "../models/gameMode";
 import { isChallengeCardType } from "../models/card";
 import type { AttackResolveOutcome } from "../models/attackResolveOutcome";
 import {
@@ -89,7 +86,9 @@ export class DatabaseService {
     });
   }
 
-  subscribePlayers(onNext: (rows: Record<string, unknown>[]) => void): () => void {
+  subscribePlayers(
+    onNext: (rows: Record<string, unknown>[]) => void,
+  ): () => void {
     const load = async () => {
       const { data } = await supabase.from("players").select("*").order("name");
       onNext(data ?? []);
@@ -229,7 +228,9 @@ export class DatabaseService {
     return data!.id as string;
   }
 
-  subscribeGames(onNext: (rows: Record<string, unknown>[]) => void): () => void {
+  subscribeGames(
+    onNext: (rows: Record<string, unknown>[]) => void,
+  ): () => void {
     const load = async () => {
       const { data } = await supabase
         .from("games")
@@ -267,7 +268,10 @@ export class DatabaseService {
   }
 
   async getGameTotals(gameId: string): Promise<Record<string, number>> {
-    const { data } = await supabase.from("scores").select("*").eq("game_id", gameId);
+    const { data } = await supabase
+      .from("scores")
+      .select("*")
+      .eq("game_id", gameId);
     const totals: Record<string, number> = {};
     for (const row of data ?? []) {
       const pid = row.player_id as string;
@@ -345,7 +349,11 @@ export class DatabaseService {
     return lobbyFromRow(data.id as string, data as Record<string, unknown>);
   }
 
-  async joinLobby(lobbyCode: string, playerId: string, playerName: string): Promise<boolean> {
+  async joinLobby(
+    lobbyCode: string,
+    playerId: string,
+    playerName: string,
+  ): Promise<boolean> {
     const lobby = await this.findLobbyByCode(lobbyCode);
     if (!lobby) return false;
 
@@ -455,14 +463,19 @@ export class DatabaseService {
       .eq("id", lobbyId);
   }
 
-  subscribeLobby(lobbyId: string, onNext: (lobby: Lobby | null) => void): () => void {
+  subscribeLobby(
+    lobbyId: string,
+    onNext: (lobby: Lobby | null) => void,
+  ): () => void {
     const load = async () => {
       const { data } = await supabase
         .from("lobbies")
         .select("*")
         .eq("id", lobbyId)
         .maybeSingle();
-      onNext(data ? lobbyFromRow(lobbyId, data as Record<string, unknown>) : null);
+      onNext(
+        data ? lobbyFromRow(lobbyId, data as Record<string, unknown>) : null,
+      );
     };
     void load();
     const ch = supabase
@@ -617,7 +630,8 @@ export class DatabaseService {
         .maybeSingle();
 
       if (existingRow) {
-        const existingCards = (existingRow.cards as Record<string, unknown>[]) ?? [];
+        const existingCards =
+          (existingRow.cards as Record<string, unknown>[]) ?? [];
         for (const card of existingCards) {
           if (card.type !== "action") continue;
           const banked = card.banked === true;
@@ -748,7 +762,11 @@ export class DatabaseService {
     cardHole: number;
   }) {
     const pcId = playerCardsId(input.gameId, input.playerId);
-    const { data: row } = await supabase.from("player_cards").select("*").eq("id", pcId).single();
+    const { data: row } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", pcId)
+      .single();
     if (!row) throw new Error("Player cards not found");
     const cards = [...((row.cards as Record<string, unknown>[]) ?? [])];
     const idx = cards.findIndex((c) => {
@@ -757,7 +775,8 @@ export class DatabaseService {
       return Number(c.hole) === input.cardHole;
     });
     if (idx < 0) throw new Error("Challenge not found");
-    if (cards[idx]!.claimed === true) throw new Error("Challenge already claimed");
+    if (cards[idx]!.claimed === true)
+      throw new Error("Challenge already claimed");
     if (cards[idx]!.verificationPending === true) {
       throw new Error("Challenge is awaiting verification");
     }
@@ -850,7 +869,11 @@ export class DatabaseService {
       throw new Error("You cannot assign yourself as fighter");
     }
     const pcId = playerCardsId(input.gameId, input.sponsorId);
-    const { data: row } = await supabase.from("player_cards").select("*").eq("id", pcId).single();
+    const { data: row } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", pcId)
+      .single();
     if (!row) throw new Error("Player cards not found");
     const cards = [...((row.cards as Record<string, unknown>[]) ?? [])];
     const idx = cards.findIndex((c) => {
@@ -859,7 +882,8 @@ export class DatabaseService {
       return Number(c.hole) === input.cardHole;
     });
     if (idx < 0) throw new Error("Challenge not found");
-    if (cards[idx]!.claimed === true) throw new Error("Challenge already claimed");
+    if (cards[idx]!.claimed === true)
+      throw new Error("Challenge already claimed");
     if (cards[idx]!.verificationPending === true) {
       throw new Error("Challenge is already awaiting verification");
     }
@@ -885,7 +909,11 @@ export class DatabaseService {
   }): Promise<string> {
     const verificationId = randomUuid();
     const pcId = playerCardsId(input.gameId, input.claimantId);
-    const { data: row } = await supabase.from("player_cards").select("*").eq("id", pcId).single();
+    const { data: row } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", pcId)
+      .single();
     if (!row) throw new Error("Player cards not found");
     const cards = [...((row.cards as Record<string, unknown>[]) ?? [])];
     const idx = cards.findIndex((c) => {
@@ -894,7 +922,8 @@ export class DatabaseService {
       return Number(c.hole) === input.cardHole;
     });
     if (idx < 0) throw new Error("Challenge not found");
-    if (cards[idx]!.claimed === true) throw new Error("Challenge already claimed");
+    if (cards[idx]!.claimed === true)
+      throw new Error("Challenge already claimed");
     if (cards[idx]!.verificationPending === true) {
       throw new Error("Challenge is already awaiting verification");
     }
@@ -988,9 +1017,7 @@ export class DatabaseService {
         pointsToAward: input.pointsToAward,
         title: input.cardSummary.title,
         description: input.cardSummary.description,
-        ...(deputyId != null
-          ? { deputyId, deputyName: deputyName ?? "" }
-          : {}),
+        ...(deputyId != null ? { deputyId, deputyName: deputyName ?? "" } : {}),
       },
     });
     return verificationId;
@@ -1048,7 +1075,11 @@ export class DatabaseService {
     const hasDeputy = deputyId.length > 0;
 
     const pcId = playerCardsId(input.gameId, claimantId);
-    const { data: pcRow } = await supabase.from("player_cards").select("*").eq("id", pcId).single();
+    const { data: pcRow } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", pcId)
+      .single();
     if (!pcRow) throw new Error("Player cards not found");
     const cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
     const idx = cards.findIndex((c) => {
@@ -1165,15 +1196,29 @@ export class DatabaseService {
       });
     }
 
-    await this.maybeFreeChallengeRerollAfterVerification(input.gameId, claimantId);
+    await this.maybeFreeChallengeRerollAfterVerification(
+      input.gameId,
+      claimantId,
+    );
   }
 
-  private async maybeFreeChallengeRerollAfterVerification(gameId: string, claimantId: string) {
-    const { data: g } = await supabase.from("games").select("*").eq("id", gameId).single();
+  private async maybeFreeChallengeRerollAfterVerification(
+    gameId: string,
+    claimantId: string,
+  ) {
+    const { data: g } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", gameId)
+      .single();
     if (!g) return;
     const hole = Number(g.current_hole ?? 1);
     const pcId = playerCardsId(gameId, claimantId);
-    const { data: pc } = await supabase.from("player_cards").select("*").eq("id", pcId).maybeSingle();
+    const { data: pc } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", pcId)
+      .maybeSingle();
     if (!pc) return;
     const cards = (pc.cards as Record<string, unknown>[]) ?? [];
     const forHole = cards.filter(
@@ -1198,13 +1243,22 @@ export class DatabaseService {
     cardId: string;
     cardHole: number;
   }) {
-    const { data: g } = await supabase.from("games").select("*").eq("id", input.gameId).single();
+    const { data: g } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", input.gameId)
+      .single();
     if (!g) throw new Error("Game not found");
     const cur = Number(g.current_hole ?? 1);
-    if (input.cardHole !== cur) throw new Error("That action is not part of this hole's offers");
+    if (input.cardHole !== cur)
+      throw new Error("That action is not part of this hole's offers");
 
     const pcId = playerCardsId(input.gameId, input.playerId);
-    const { data: pcRow } = await supabase.from("player_cards").select("*").eq("id", pcId).single();
+    const { data: pcRow } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", pcId)
+      .single();
     if (!pcRow) throw new Error("Player cards not found");
     const cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
     const idx = cards.findIndex((c) => {
@@ -1232,7 +1286,11 @@ export class DatabaseService {
     cardHole: number;
   }) {
     const pcId = playerCardsId(input.gameId, input.playerId);
-    const { data: pcRow } = await supabase.from("player_cards").select("*").eq("id", pcId).single();
+    const { data: pcRow } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", pcId)
+      .single();
     if (!pcRow) throw new Error("Player cards not found");
     let cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
     let idx = cards.findIndex((c) => {
@@ -1263,7 +1321,11 @@ export class DatabaseService {
     cardHole: number;
   }) {
     const pcId = playerCardsId(input.gameId, input.playerId);
-    const { data: pcRow } = await supabase.from("player_cards").select("*").eq("id", pcId).single();
+    const { data: pcRow } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", pcId)
+      .single();
     if (!pcRow) throw new Error("Player cards not found");
     let cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
     let idx = cards.findIndex((c) => {
@@ -1296,7 +1358,11 @@ export class DatabaseService {
     const pcId = playerCardsId(input.gameId, input.playerId);
     const [{ data: pcRow }, { data: gameDoc }] = await Promise.all([
       supabase.from("player_cards").select("*").eq("id", pcId).single(),
-      supabase.from("games").select("current_hole").eq("id", input.gameId).single(),
+      supabase
+        .from("games")
+        .select("current_hole")
+        .eq("id", input.gameId)
+        .single(),
     ]);
     if (!pcRow) throw new Error("Player cards not found");
     if (!gameDoc) throw new Error("Game not found");
@@ -1326,7 +1392,8 @@ export class DatabaseService {
     if (idx < 0) throw new Error("Saved action not found");
 
     const played = cards[idx]!;
-    const playedHole = played.hole != null ? Number(played.hole) : input.cardHole;
+    const playedHole =
+      played.hole != null ? Number(played.hole) : input.cardHole;
 
     // Strip stays full: consume from bag but refill this hole's slot with a fresh offer.
     if (played.type === "action" && playedHole === curHole) {
@@ -1367,7 +1434,11 @@ export class DatabaseService {
     cardHole: number;
   }) {
     const pcId = playerCardsId(input.gameId, input.playerId);
-    const { data: pcRow } = await supabase.from("player_cards").select("*").eq("id", pcId).single();
+    const { data: pcRow } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", pcId)
+      .single();
     if (!pcRow) throw new Error("Player cards not found");
     const cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
     const idx = cards.findIndex((c) => {
@@ -1391,7 +1462,11 @@ export class DatabaseService {
   ): () => void {
     const id = playerCardsId(gameId, playerId);
     const load = async () => {
-      const { data } = await supabase.from("player_cards").select("*").eq("id", id).maybeSingle();
+      const { data } = await supabase
+        .from("player_cards")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
       onNext(data as Record<string, unknown> | null);
     };
     void load();
@@ -1510,9 +1585,16 @@ export class DatabaseService {
     return data as Record<string, unknown> | null;
   }
 
-  subscribeGame(gameId: string, onNext: (row: Record<string, unknown> | null) => void): () => void {
+  subscribeGame(
+    gameId: string,
+    onNext: (row: Record<string, unknown> | null) => void,
+  ): () => void {
     const load = async () => {
-      const { data } = await supabase.from("games").select("*").eq("id", gameId).maybeSingle();
+      const { data } = await supabase
+        .from("games")
+        .select("*")
+        .eq("id", gameId)
+        .maybeSingle();
       onNext(data as Record<string, unknown> | null);
     };
     void load();
@@ -1562,7 +1644,11 @@ export class DatabaseService {
   }
 
   async nextHole(gameId: string, playerIds: string[]) {
-    const { data: gameDoc } = await supabase.from("games").select("*").eq("id", gameId).single();
+    const { data: gameDoc } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", gameId)
+      .single();
     if (!gameDoc) return;
     const currentHole = Number(gameDoc.current_hole ?? 1);
     const totalHoles = Number(gameDoc.holes ?? 18);
@@ -1612,7 +1698,11 @@ export class DatabaseService {
     gameId: string;
     playerId: string;
   }) {
-    const { data: g } = await supabase.from("games").select("*").eq("id", input.gameId).single();
+    const { data: g } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", input.gameId)
+      .single();
     if (!g) throw new Error("Game not found");
     const hole = Number(g.current_hole ?? 1);
     const raw = (g.hidden_balance_until_hole as Record<string, number>) ?? {};
@@ -1631,12 +1721,20 @@ export class DatabaseService {
     opts?: { free?: boolean; hideNextChallengeDrawPopup?: boolean },
   ) {
     const free = opts?.free ?? false;
-    const { data: gameDoc } = await supabase.from("games").select("*").eq("id", gameId).single();
+    const { data: gameDoc } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", gameId)
+      .single();
     if (!gameDoc) throw new Error("Game not found");
     const currentHole = Number(gameDoc.current_hole ?? 1);
 
     const pcId = playerCardsId(gameId, playerId);
-    const { data: pcRow } = await supabase.from("player_cards").select("*").eq("id", pcId).single();
+    const { data: pcRow } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", pcId)
+      .single();
     if (!pcRow) throw new Error("Player cards not found");
     const rerollsUsed = Number(pcRow.challenge_rerolls_used ?? 0);
     const cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
@@ -1669,23 +1767,21 @@ export class DatabaseService {
       .eq("game_id", gameId)
       .maybeSingle();
     const passive = [
-      ...(((geRow?.passive_effects as Record<string, unknown>[]) ?? []).filter(
+      ...((geRow?.passive_effects as Record<string, unknown>[]) ?? []).filter(
         (e) => e.playerId !== playerId,
-      )),
+      ),
       ...newChallenges.map((c) => ({
         ...c,
         playerId,
         hole: currentHole,
       })),
     ];
-    await supabase
-      .from("global_effects")
-      .upsert({
-        game_id: gameId,
-        passive_effects: passive,
-        hole: currentHole,
-        updated_at: nowIso(),
-      });
+    await supabase.from("global_effects").upsert({
+      game_id: gameId,
+      passive_effects: passive,
+      hole: currentHole,
+      updated_at: nowIso(),
+    });
 
     await this.cancelPendingChallengeVerificationsForPlayerHole(
       gameId,
@@ -1699,12 +1795,20 @@ export class DatabaseService {
     playerId: string,
     opts?: { free?: boolean; hideNextChallengeDrawPopup?: boolean },
   ) {
-    const { data: gameDoc } = await supabase.from("games").select("*").eq("id", gameId).single();
+    const { data: gameDoc } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", gameId)
+      .single();
     if (!gameDoc) throw new Error("Game not found");
     const currentHole = Number(gameDoc.current_hole ?? 1);
 
     const pcId = playerCardsId(gameId, playerId);
-    const { data: pcRow } = await supabase.from("player_cards").select("*").eq("id", pcId).single();
+    const { data: pcRow } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", pcId)
+      .single();
     if (!pcRow) throw new Error("Player cards not found");
     const rerollsUsed = Number(pcRow.action_rerolls_used ?? 0);
     if (rerollsUsed >= DatabaseService.rerollHandMaxUses) {
@@ -1717,7 +1821,9 @@ export class DatabaseService {
     if (actions.length === 0) throw new Error("No actions to reroll");
 
     const keptActions = mergeKeptActionsForHoleReroll(actions, currentHole);
-    const excludeIds = new Set(keptActions.map((c) => String(c.id)).filter(Boolean));
+    const excludeIds = new Set(
+      keptActions.map((c) => String(c.id)).filter(Boolean),
+    );
     const newActions = pickCards("action", {
       count: 3,
       playerId,
@@ -1743,7 +1849,11 @@ export class DatabaseService {
     cardId: string;
     cardHole: number;
   }) {
-    const { data: gameDoc } = await supabase.from("games").select("*").eq("id", input.gameId).single();
+    const { data: gameDoc } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", input.gameId)
+      .single();
     if (!gameDoc) throw new Error("Game not found");
     const currentHole = Number(gameDoc.current_hole ?? 1);
     const lockedRaw =
@@ -1757,7 +1867,11 @@ export class DatabaseService {
     }
 
     const pcId = playerCardsId(input.gameId, input.playerId);
-    const { data: pcRow } = await supabase.from("player_cards").select("*").eq("id", pcId).single();
+    const { data: pcRow } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", pcId)
+      .single();
     if (!pcRow) throw new Error("Player cards not found");
     const cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
     const idx = cards.findIndex((c) => {
@@ -1815,15 +1929,28 @@ export class DatabaseService {
   > {
     const thiefRef = playerCardsId(input.gameId, input.thiefPlayerId);
     const targetRef = playerCardsId(input.gameId, input.targetPlayerId);
-    const { data: thiefRow } = await supabase.from("player_cards").select("*").eq("id", thiefRef).single();
-    const { data: targetRow } = await supabase.from("player_cards").select("*").eq("id", targetRef).single();
+    const { data: thiefRow } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", thiefRef)
+      .single();
+    const { data: targetRow } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", targetRef)
+      .single();
     if (!thiefRow || !targetRow) throw new Error("Player cards not found");
 
-    const thiefCards = [...((thiefRow.cards as Record<string, unknown>[]) ?? [])];
-    const targetCards = [...((targetRow.cards as Record<string, unknown>[]) ?? [])];
+    const thiefCards = [
+      ...((thiefRow.cards as Record<string, unknown>[]) ?? []),
+    ];
+    const targetCards = [
+      ...((targetRow.cards as Record<string, unknown>[]) ?? []),
+    ];
     const candidateIndexes: number[] = [];
     for (let i = 0; i < targetCards.length; i++) {
-      if (this.isPlayableActionCandidate(targetCards[i]!)) candidateIndexes.push(i);
+      if (this.isPlayableActionCandidate(targetCards[i]!))
+        candidateIndexes.push(i);
     }
     if (candidateIndexes.length === 0) {
       return { ok: false, reason: "no_cards" };
@@ -1856,12 +1983,19 @@ export class DatabaseService {
     | { ok: false; reason: "no_cards" }
   > {
     const targetRef = playerCardsId(input.gameId, input.targetPlayerId);
-    const { data: targetRow } = await supabase.from("player_cards").select("*").eq("id", targetRef).single();
+    const { data: targetRow } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", targetRef)
+      .single();
     if (!targetRow) throw new Error("Player cards not found");
-    const targetCards = [...((targetRow.cards as Record<string, unknown>[]) ?? [])];
+    const targetCards = [
+      ...((targetRow.cards as Record<string, unknown>[]) ?? []),
+    ];
     const candidateIndexes: number[] = [];
     for (let i = 0; i < targetCards.length; i++) {
-      if (this.isPlayableActionCandidate(targetCards[i]!)) candidateIndexes.push(i);
+      if (this.isPlayableActionCandidate(targetCards[i]!))
+        candidateIndexes.push(i);
     }
     if (candidateIndexes.length === 0) {
       return { ok: false, reason: "no_cards" };
@@ -1880,21 +2014,33 @@ export class DatabaseService {
     gameId: string;
     targetPlayerId: string;
   }) {
-    const { data: g } = await supabase.from("games").select("*").eq("id", input.gameId).single();
+    const { data: g } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", input.gameId)
+      .single();
     if (!g) throw new Error("Game not found");
     const currentHole = Number(g.current_hole ?? 1);
-    const raw = (g.action_buy_locked_until_hole as Record<string, number>) ?? {};
+    const raw =
+      (g.action_buy_locked_until_hole as Record<string, number>) ?? {};
     await supabase
       .from("games")
       .update({
-        action_buy_locked_until_hole: { ...raw, [input.targetPlayerId]: currentHole },
+        action_buy_locked_until_hole: {
+          ...raw,
+          [input.targetPlayerId]: currentHole,
+        },
         updated_at: nowIso(),
       })
       .eq("id", input.gameId);
   }
 
   async armActionStealForPlayer(input: { gameId: string; playerId: string }) {
-    const { data: g } = await supabase.from("games").select("*").eq("id", input.gameId).single();
+    const { data: g } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", input.gameId)
+      .single();
     if (!g) throw new Error("Game not found");
     const raw = (g.action_steal_armed as Record<string, boolean>) ?? {};
     await supabase
@@ -2006,9 +2152,14 @@ export class DatabaseService {
     if (title === "action steal") return;
     if (input.sourceActionCard.type !== "action") return;
 
-    const { data: gameDoc } = await supabase.from("games").select("*").eq("id", input.gameId).single();
+    const { data: gameDoc } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", input.gameId)
+      .single();
     if (!gameDoc) return;
-    const armedRaw = (gameDoc.action_steal_armed as Record<string, boolean>) ?? {};
+    const armedRaw =
+      (gameDoc.action_steal_armed as Record<string, boolean>) ?? {};
     const armedPlayers = Object.entries(armedRaw)
       .filter(([, v]) => v === true)
       .map(([k]) => k);
@@ -2017,7 +2168,11 @@ export class DatabaseService {
     const now = `${Date.now()}_${Math.floor(Math.random() * 100000)}`;
     for (const playerId of armedPlayers) {
       const pcId = playerCardsId(input.gameId, playerId);
-      const { data: pcRow } = await supabase.from("player_cards").select("*").eq("id", pcId).maybeSingle();
+      const { data: pcRow } = await supabase
+        .from("player_cards")
+        .select("*")
+        .eq("id", pcId)
+        .maybeSingle();
       if (!pcRow) continue;
       const cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
       const originalId = String(input.sourceActionCard.id ?? "action_copy");

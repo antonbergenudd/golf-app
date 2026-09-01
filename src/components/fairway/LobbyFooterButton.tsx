@@ -62,8 +62,7 @@ export function LobbyFooterButton({
               busy ? styles.primaryFaceDisabled : styles.primaryFace,
             ]
           : [styles.face, styles.dangerFace];
-        const pressedStyle =
-          pressed && !busy ? styles.facePressed : null;
+        const pressedStyle = pressed && !busy ? styles.facePressed : null;
 
         return (
           <View style={[...faceStyle, pressedStyle]}>
@@ -79,11 +78,7 @@ export function LobbyFooterButton({
             ) : (
               <View style={styles.row}>
                 {primary && showPlayIcon ? (
-                  <MaterialIcons
-                    name="play-arrow"
-                    size={18}
-                    color={GOLD}
-                  />
+                  <MaterialIcons name="play-arrow" size={18} color={GOLD} />
                 ) : null}
                 <Text
                   style={primary ? styles.primaryLabel : styles.dangerLabel}

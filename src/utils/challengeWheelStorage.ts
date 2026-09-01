@@ -24,7 +24,10 @@ export async function persistChallengeWheelSpin(
   ]);
 }
 
-export async function clearChallengeWheelLocalState(gameId: string, cardId: string) {
+export async function clearChallengeWheelLocalState(
+  gameId: string,
+  cardId: string,
+) {
   await AsyncStorage.multiRemove([
     challengeWheelDoneKey(gameId, cardId),
     challengeWheelClubKey(gameId, cardId),

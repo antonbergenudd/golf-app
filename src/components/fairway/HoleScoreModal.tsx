@@ -58,7 +58,9 @@ export function HoleScoreModal({
                 onPress={() => bump(-1)}
                 disabled={busy || strokes <= MIN_STROKES}
                 style={({ pressed }) => [
-                  pressed && !(busy || strokes <= MIN_STROKES) && styles.stepBtnPressed,
+                  pressed &&
+                    !(busy || strokes <= MIN_STROKES) &&
+                    styles.stepBtnPressed,
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Decrease strokes"
@@ -70,7 +72,11 @@ export function HoleScoreModal({
                       styles.stepBtnCircleDisabled,
                   ]}
                 >
-                  <MaterialIcons name="remove" size={22} color={GolfColors.gold} />
+                  <MaterialIcons
+                    name="remove"
+                    size={22}
+                    color={GolfColors.gold}
+                  />
                 </View>
               </Pressable>
 
@@ -83,7 +89,9 @@ export function HoleScoreModal({
                 onPress={() => bump(1)}
                 disabled={busy || strokes >= MAX_STROKES}
                 style={({ pressed }) => [
-                  pressed && !(busy || strokes >= MAX_STROKES) && styles.stepBtnPressed,
+                  pressed &&
+                    !(busy || strokes >= MAX_STROKES) &&
+                    styles.stepBtnPressed,
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Increase strokes"

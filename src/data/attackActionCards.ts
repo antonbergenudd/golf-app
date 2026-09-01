@@ -29,7 +29,8 @@ export const ATTACK_ACTION_CARDS: GameCard[] = [
   {
     id: "action_024",
     title: "You are Locked",
-    description: "Prevent a player from buying action cards for the entire hole",
+    description:
+      "Prevent a player from buying action cards for the entire hole",
     type: "action",
     points: 4,
     actionCategory: "attack",
@@ -45,7 +46,8 @@ export const ATTACK_ACTION_CARDS: GameCard[] = [
   {
     id: "action_026",
     title: "Pick their club",
-    description: "Choose which club your opponent must use for their next stroke.",
+    description:
+      "Choose which club your opponent must use for their next stroke.",
     type: "action",
     points: 2,
     actionCategory: "attack",

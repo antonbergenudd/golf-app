@@ -1,5 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, useGlobalSearchParams, useLocalSearchParams } from "expo-router";
+import {
+  router,
+  useGlobalSearchParams,
+  useLocalSearchParams,
+} from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -43,13 +47,10 @@ export default function WheelScreen() {
   const playerNameRaw =
     paramFirst(local.playerName) || paramFirst(global.playerName);
   const playerName = playerNameRaw ? String(playerNameRaw) : undefined;
-  const autoSpinRaw =
-    paramFirst(local.autoSpin) || paramFirst(global.autoSpin);
+  const autoSpinRaw = paramFirst(local.autoSpin) || paramFirst(global.autoSpin);
   const auto = autoSpinRaw === "1" || autoSpinRaw === "true";
-  const gameId =
-    paramFirst(local.gameId) || paramFirst(global.gameId);
-  const cardId =
-    paramFirst(local.cardId) || paramFirst(global.cardId);
+  const gameId = paramFirst(local.gameId) || paramFirst(global.gameId);
+  const cardId = paramFirst(local.cardId) || paramFirst(global.cardId);
 
   const { width: screenW } = useWindowDimensions();
   const horizontalPad = 24;
@@ -193,8 +194,7 @@ export default function WheelScreen() {
             <View style={styles.modalCard}>
               <Text style={styles.modalKicker}>Wheel of Doom</Text>
               <Text style={styles.modalTitle}>
-                Your club is{" "}
-                <Text style={styles.modalPick}>{pick ?? "—"}</Text>
+                Your club is <Text style={styles.modalPick}>{pick ?? "—"}</Text>
               </Text>
               <Text style={styles.modalHint}>
                 Tap OK to return — you only spin once for this challenge.

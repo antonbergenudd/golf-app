@@ -2,7 +2,11 @@ import { useNavigation } from "@react-navigation/native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useGlobalSearchParams, useLocalSearchParams, usePathname } from "expo-router";
+import {
+  useGlobalSearchParams,
+  useLocalSearchParams,
+  usePathname,
+} from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -56,8 +60,7 @@ function sumStrokes(
 ): number {
   return scoreRows
     .filter(
-      (r) =>
-        String(r.game_id) === gameId && String(r.player_id) === playerId,
+      (r) => String(r.game_id) === gameId && String(r.player_id) === playerId,
     )
     .reduce((acc, r) => acc + Number(r.strokes ?? 0), 0);
 }
@@ -96,11 +99,8 @@ export default function ScorecardScreen() {
   const gameIdFromPath = pathname.match(/\/game\/([^/]+)/)?.[1] ?? "";
 
   const gid =
-    paramFirst(local.gameId) ||
-    paramFirst(global.gameId) ||
-    gameIdFromPath;
-  const lid =
-    paramFirst(local.lobbyId) || paramFirst(global.lobbyId);
+    paramFirst(local.gameId) || paramFirst(global.gameId) || gameIdFromPath;
+  const lid = paramFirst(local.lobbyId) || paramFirst(global.lobbyId);
   const selfId =
     paramFirst(local.currentPlayerId) ||
     paramFirst(global.currentPlayerId) ||
@@ -168,8 +168,7 @@ export default function ScorecardScreen() {
   const myHoleScoreRow = useMemo(
     () =>
       scoreRows.find(
-        (r) =>
-          String(r.player_id) === selfId && Number(r.hole) === currentHole,
+        (r) => String(r.player_id) === selfId && Number(r.hole) === currentHole,
       ),
     [scoreRows, selfId, currentHole],
   );
@@ -202,9 +201,7 @@ export default function ScorecardScreen() {
     }
     blurActiveElementForModalWeb();
     setDraftStrokes(
-      hasHoleScore && savedStrokesForHole != null
-        ? savedStrokesForHole
-        : 4,
+      hasHoleScore && savedStrokesForHole != null ? savedStrokesForHole : 4,
     );
     setScoreModalOpen(true);
   }, [gid, hasHoleScore, savedStrokesForHole]);
@@ -216,12 +213,11 @@ export default function ScorecardScreen() {
       caption: "Score",
       captionEntered: Boolean(gid && hasHoleScore),
       onPress: openScoreModal,
-      accessibilityLabel:
-        !gid
-          ? "Score"
-          : hasHoleScore && savedStrokesForHole != null
-            ? `Score ${savedStrokesForHole} strokes, tap to edit`
-            : "Enter score for this hole",
+      accessibilityLabel: !gid
+        ? "Score"
+        : hasHoleScore && savedStrokesForHole != null
+          ? `Score ${savedStrokesForHole} strokes, tap to edit`
+          : "Enter score for this hole",
     }),
     [gid, hasHoleScore, savedStrokesForHole, openScoreModal],
   );
@@ -309,190 +305,193 @@ export default function ScorecardScreen() {
         />
 
         <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={[
-              styles.scrollContent,
-              { paddingBottom: bottomPad },
-            ]}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Current round */}
-            <View style={styles.roundSection}>
-              <LinearGradient
-                colors={[
-                  "rgba(26,42,26,0.98)",
-                  "rgba(18,32,22,0.92)",
-                  "rgba(15,28,18,0.88)",
-                ]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.roundCard}
-              >
-                <View style={styles.roundRow}>
-                  <View>
-                    <Text style={styles.roundKicker}>Current Round</Text>
-                    <Text style={styles.roundHoleLine}>
-                      <Text style={styles.roundHoleMain}>Hole {currentHole}</Text>
-                      <Text style={styles.roundHoleOf}> of {totalHoles}</Text>
-                    </Text>
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: bottomPad },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Current round */}
+          <View style={styles.roundSection}>
+            <LinearGradient
+              colors={[
+                "rgba(26,42,26,0.98)",
+                "rgba(18,32,22,0.92)",
+                "rgba(15,28,18,0.88)",
+              ]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.roundCard}
+            >
+              <View style={styles.roundRow}>
+                <View>
+                  <Text style={styles.roundKicker}>Current Round</Text>
+                  <Text style={styles.roundHoleLine}>
+                    <Text style={styles.roundHoleMain}>Hole {currentHole}</Text>
+                    <Text style={styles.roundHoleOf}> of {totalHoles}</Text>
+                  </Text>
+                </View>
+                <View style={styles.roundRight}>
+                  <View style={styles.roundIconBox}>
+                    <MaterialIcons
+                      name="people"
+                      size={26}
+                      color={GolfColors.sage}
+                    />
                   </View>
-                  <View style={styles.roundRight}>
-                    <View style={styles.roundIconBox}>
-                      <MaterialIcons
-                        name="people"
-                        size={26}
-                        color={GolfColors.sage}
-                      />
-                    </View>
-                    <View style={styles.roundCount}>
-                      <Text style={styles.roundCountNum}>
-                        {playerIds.length}
-                      </Text>
-                      <Text style={styles.roundCountLbl}>Players</Text>
-                    </View>
+                  <View style={styles.roundCount}>
+                    <Text style={styles.roundCountNum}>{playerIds.length}</Text>
+                    <Text style={styles.roundCountLbl}>Players</Text>
                   </View>
                 </View>
-              </LinearGradient>
-            </View>
-
-            {/* Leaderboard */}
-            <View style={styles.lbTitleRow}>
-              <Text style={styles.lbTitle}>Leaderboard</Text>
-              <View style={styles.lbHints}>
-                <Text style={styles.lbHint}>Pts</Text>
-                <Text style={styles.lbHint}>Strokes</Text>
               </View>
+            </LinearGradient>
+          </View>
+
+          {/* Leaderboard */}
+          <View style={styles.lbTitleRow}>
+            <Text style={styles.lbTitle}>Leaderboard</Text>
+            <View style={styles.lbHints}>
+              <Text style={styles.lbHint}>Pts</Text>
+              <Text style={styles.lbHint}>Strokes</Text>
             </View>
+          </View>
 
-            {sortedPlayerIds.map((pid, index) => {
-              const isLeader = index === 0;
-              const isYou = pid === selfId;
-              const displayName = names[pid] ?? pid.slice(0, 8);
-              const pts = rawPoints[pid] ?? 0;
-              const hidden =
-                (rawHidden[pid] ?? 0) >= currentHole && pid !== selfId;
-              const totalStr = sumStrokes(scoreRows, gid, pid);
+          {sortedPlayerIds.map((pid, index) => {
+            const isLeader = index === 0;
+            const isYou = pid === selfId;
+            const displayName = names[pid] ?? pid.slice(0, 8);
+            const pts = rawPoints[pid] ?? 0;
+            const hidden =
+              (rawHidden[pid] ?? 0) >= currentHole && pid !== selfId;
+            const totalStr = sumStrokes(scoreRows, gid, pid);
 
-              const cardBorder = isYou
-                ? styles.playerCardYou
-                : isLeader
-                  ? styles.playerCardLeader
-                  : styles.playerCardDefault;
+            const cardBorder = isYou
+              ? styles.playerCardYou
+              : isLeader
+                ? styles.playerCardLeader
+                : styles.playerCardDefault;
 
-              return (
-                <View key={pid} style={[styles.playerCard, cardBorder]}>
-                  <View style={styles.playerHeader}>
+            return (
+              <View key={pid} style={[styles.playerCard, cardBorder]}>
+                <View style={styles.playerHeader}>
+                  <View
+                    style={[
+                      styles.rankBadge,
+                      isLeader ? styles.rankBadgeLeader : styles.rankBadgeRest,
+                    ]}
+                  >
+                    {isLeader ? (
+                      <MaterialCommunityIcons
+                        name="crown"
+                        size={16}
+                        color={GolfColors.forestDeep}
+                      />
+                    ) : (
+                      <Text style={styles.rankNum}>{index + 1}</Text>
+                    )}
+                  </View>
+
+                  <View
+                    style={[
+                      styles.avatar,
+                      isYou ? styles.avatarYou : styles.avatarOther,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.avatarLetter,
+                        isYou ? styles.avatarLetterYou : undefined,
+                      ]}
+                    >
+                      {avatarInitial(displayName, pid)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.nameBlock}>
+                    <View style={styles.nameRow}>
+                      <Text
+                        style={[
+                          styles.playerName,
+                          isYou && styles.playerNameYou,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {displayName}
+                      </Text>
+                      {isYou ? (
+                        <View style={styles.youBadge}>
+                          <Text style={styles.youBadgeText}>You</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </View>
+
+                  <View style={styles.metrics}>
                     <View
                       style={[
-                        styles.rankBadge,
-                        isLeader ? styles.rankBadgeLeader : styles.rankBadgeRest,
+                        styles.ptsPill,
+                        isLeader ? styles.ptsPillLeader : styles.ptsPillOther,
                       ]}
                     >
                       {isLeader ? (
-                        <MaterialCommunityIcons
-                          name="crown"
-                          size={16}
-                          color={GolfColors.forestDeep}
+                        <MaterialIcons
+                          name="emoji-events"
+                          size={14}
+                          color={GolfColors.sage}
                         />
-                      ) : (
-                        <Text style={styles.rankNum}>{index + 1}</Text>
-                      )}
-                    </View>
-
-                    <View
-                      style={[
-                        styles.avatar,
-                        isYou ? styles.avatarYou : styles.avatarOther,
-                      ]}
-                    >
+                      ) : null}
                       <Text
                         style={[
-                          styles.avatarLetter,
-                          isYou ? styles.avatarLetterYou : undefined,
+                          styles.ptsVal,
+                          isLeader ? styles.ptsValLeader : styles.ptsValOther,
                         ]}
                       >
-                        {avatarInitial(displayName, pid)}
+                        {hidden ? "—" : String(pts)}
                       </Text>
                     </View>
-
-                    <View style={styles.nameBlock}>
-                      <View style={styles.nameRow}>
-                        <Text
-                          style={[styles.playerName, isYou && styles.playerNameYou]}
-                          numberOfLines={1}
-                        >
-                          {displayName}
-                        </Text>
-                        {isYou ? (
-                          <View style={styles.youBadge}>
-                            <Text style={styles.youBadgeText}>You</Text>
-                          </View>
-                        ) : null}
-                      </View>
-                    </View>
-
-                    <View style={styles.metrics}>
-                      <View
-                        style={[
-                          styles.ptsPill,
-                          isLeader ? styles.ptsPillLeader : styles.ptsPillOther,
-                        ]}
-                      >
-                        {isLeader ? (
-                          <MaterialIcons
-                            name="emoji-events"
-                            size={14}
-                            color={GolfColors.sage}
-                          />
-                        ) : null}
-                        <Text
-                          style={[
-                            styles.ptsVal,
-                            isLeader ? styles.ptsValLeader : styles.ptsValOther,
-                          ]}
-                        >
-                          {hidden ? "—" : String(pts)}
-                        </Text>
-                      </View>
-                      <Text style={styles.strokeCol}>{totalStr}</Text>
-                    </View>
+                    <Text style={styles.strokeCol}>{totalStr}</Text>
                   </View>
-
-                  <View style={styles.gridWrap}>
-                    {holeRows.map((row, ri) => (
-                      <View key={`row-${ri}`} style={styles.holeRow}>
-                        {row.map((holeNum) => {
-                          const stroke = strokeForHole(scoreRows, pid, holeNum);
-                          const isDash = stroke == null;
-                          const isCurrent = holeNum === currentHole;
-                          const cellStyle = isDash
-                            ? styles.holeCellEmpty
-                            : isCurrent
-                              ? styles.holeCellCurrent
-                              : styles.holeCellFilled;
-
-                          return (
-                            <View key={holeNum} style={[styles.holeCell, cellStyle]}>
-                              <Text style={styles.holeIdx}>{holeNum}</Text>
-                              <Text
-                                style={[
-                                  styles.holeScore,
-                                  isDash && styles.holeScoreMuted,
-                                ]}
-                              >
-                                {isDash ? "—" : String(stroke)}
-                              </Text>
-                            </View>
-                          );
-                        })}
-                      </View>
-                    ))}
-                  </View>
-
                 </View>
-              );
-            })}
-          </ScrollView>
+
+                <View style={styles.gridWrap}>
+                  {holeRows.map((row, ri) => (
+                    <View key={`row-${ri}`} style={styles.holeRow}>
+                      {row.map((holeNum) => {
+                        const stroke = strokeForHole(scoreRows, pid, holeNum);
+                        const isDash = stroke == null;
+                        const isCurrent = holeNum === currentHole;
+                        const cellStyle = isDash
+                          ? styles.holeCellEmpty
+                          : isCurrent
+                            ? styles.holeCellCurrent
+                            : styles.holeCellFilled;
+
+                        return (
+                          <View
+                            key={holeNum}
+                            style={[styles.holeCell, cellStyle]}
+                          >
+                            <Text style={styles.holeIdx}>{holeNum}</Text>
+                            <Text
+                              style={[
+                                styles.holeScore,
+                                isDash && styles.holeScoreMuted,
+                              ]}
+                            >
+                              {isDash ? "—" : String(stroke)}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            );
+          })}
+        </ScrollView>
       </SafeAreaView>
 
       <HoleScoreModal

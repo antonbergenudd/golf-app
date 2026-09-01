@@ -109,7 +109,10 @@ export function pickTieredChallengeDraw(
   return out;
 }
 
-export function generateRoundCards(playerId: string, hole: number): Record<string, unknown>[] {
+export function generateRoundCards(
+  playerId: string,
+  hole: number,
+): Record<string, unknown>[] {
   return pickTieredChallengeDraw(playerId, hole);
 }
 

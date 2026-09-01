@@ -261,7 +261,11 @@ export default function LobbyRoomScreen() {
 
       async function performKick() {
         try {
-          await databaseService.kickPlayerFromLobby(lobbyId, playerId, target.id);
+          await databaseService.kickPlayerFromLobby(
+            lobbyId,
+            playerId,
+            target.id,
+          );
         } catch (e) {
           Alert.alert("Could not remove player", String(e));
         }
@@ -411,9 +415,7 @@ export default function LobbyRoomScreen() {
     const players = lobby.players;
     const maxPlayers = lobby.maxPlayers;
     const canShowStart =
-      isHost &&
-      players.length >= 1 &&
-      lobbyHelpers.isWaiting(lobby);
+      isHost && players.length >= 1 && lobbyHelpers.isWaiting(lobby);
 
     return (
       <View style={styles.bodyColumn}>
@@ -472,10 +474,18 @@ export default function LobbyRoomScreen() {
               </View>
               <View style={styles.codeActionsRow}>
                 <Pressable onPress={copyCode} style={styles.iconTile}>
-                  <MaterialIcons name="content-copy" size={18} color={GolfColors.gold} />
+                  <MaterialIcons
+                    name="content-copy"
+                    size={18}
+                    color={GolfColors.gold}
+                  />
                 </Pressable>
                 <Pressable onPress={openQrModal} style={styles.iconTile}>
-                  <MaterialIcons name="qr-code" size={18} color={GolfColors.gold} />
+                  <MaterialIcons
+                    name="qr-code"
+                    size={18}
+                    color={GolfColors.gold}
+                  />
                 </Pressable>
                 {isHost ? (
                   <Pressable
@@ -496,9 +506,15 @@ export default function LobbyRoomScreen() {
           </LinearGradient>
 
           {/* Players card */}
-          <View style={[styles.card, { paddingHorizontal: 0, paddingVertical: 0 }]}>
+          <View
+            style={[styles.card, { paddingHorizontal: 0, paddingVertical: 0 }]}
+          >
             <View style={styles.playersHeader}>
-              <MaterialIcons name="people-outline" size={18} color={GolfColors.sage} />
+              <MaterialIcons
+                name="people-outline"
+                size={18}
+                color={GolfColors.sage}
+              />
               <Text style={styles.playersKicker}>Players</Text>
             </View>
             <View style={styles.playersDivider} />
@@ -508,7 +524,11 @@ export default function LobbyRoomScreen() {
                 {index >= players.length ? (
                   <View style={styles.playerRow}>
                     <View style={styles.emptyAvatar}>
-                      <MaterialIcons name="add" size={18} color={`${GolfColors.hint}E6`} />
+                      <MaterialIcons
+                        name="add"
+                        size={18}
+                        color={`${GolfColors.hint}E6`}
+                      />
                     </View>
                     <Text style={styles.openSpot}>Open spot</Text>
                   </View>
@@ -582,7 +602,9 @@ export default function LobbyRoomScreen() {
               size={20}
               color={GolfColors.gold}
             />
-            <Text style={styles.copySnackbarText}>Code copied to clipboard</Text>
+            <Text style={styles.copySnackbarText}>
+              Code copied to clipboard
+            </Text>
           </View>
         </Animated.View>
 
@@ -593,7 +615,10 @@ export default function LobbyRoomScreen() {
           animationType="fade"
           onShow={blurActiveElementForModalWeb}
         >
-          <Pressable style={styles.modalBackdrop} onPress={() => setQrOpen(false)}>
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setQrOpen(false)}
+          >
             <Pressable
               style={styles.qrSheet}
               onPress={(e) => e.stopPropagation()}
@@ -604,7 +629,10 @@ export default function LobbyRoomScreen() {
               </View>
               <Text style={styles.qrCode}>{lobby?.code}</Text>
               <Text style={styles.qrHint}>or type the code above</Text>
-              <Pressable onPress={() => setQrOpen(false)} style={{ marginTop: 16 }}>
+              <Pressable
+                onPress={() => setQrOpen(false)}
+                style={{ marginTop: 16 }}
+              >
                 <Text style={styles.qrClose}>Close</Text>
               </Pressable>
             </Pressable>
@@ -627,143 +655,151 @@ export default function LobbyRoomScreen() {
             />
             <View style={styles.modalSettingsFrame} pointerEvents="box-none">
               <View style={styles.settingsSheet}>
-              <Text style={styles.modalTitle}>Game Settings</Text>
-              <View style={styles.settingsModalBody}>
-                <View>
-                  <Text style={styles.modalKicker}>Number of holes</Text>
-                  <View style={styles.holeWrap}>
-                    {[6, 9, 12, 18, 36].map((h) => (
+                <Text style={styles.modalTitle}>Game Settings</Text>
+                <View style={styles.settingsModalBody}>
+                  <View>
+                    <Text style={styles.modalKicker}>Number of holes</Text>
+                    <View style={styles.holeWrap}>
+                      {[6, 9, 12, 18, 36].map((h) => (
+                        <Pressable
+                          key={h}
+                          onPress={() => {
+                            setDraftHoles(h);
+                            setDraftCustom(String(h));
+                          }}
+                          style={[
+                            styles.holeChip,
+                            draftHoles === h
+                              ? styles.holeChipOn
+                              : styles.holeChipOff,
+                          ]}
+                        >
+                          <Text
+                            style={
+                              draftHoles === h
+                                ? styles.holeChipTextOn
+                                : styles.holeChipTextOff
+                            }
+                          >
+                            {h} holes
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                    <Text style={[styles.modalKicker, { marginTop: 14 }]}>
+                      Custom
+                    </Text>
+                    <TextInput
+                      value={draftCustom}
+                      onChangeText={(t) => {
+                        setDraftCustom(t);
+                        const n = parseInt(t, 10);
+                        if (!Number.isNaN(n)) setDraftHoles(n);
+                      }}
+                      keyboardType="number-pad"
+                      placeholder="e.g. 27"
+                      placeholderTextColor={`${GolfColors.sage}99`}
+                      style={styles.modalInput}
+                    />
+                  </View>
+                  <View style={{ marginTop: 20 }}>
+                    <Text style={styles.modalKicker}>Game mode</Text>
+                    <View style={styles.modeRow}>
                       <Pressable
-                        key={h}
-                        onPress={() => {
-                          setDraftHoles(h);
-                          setDraftCustom(String(h));
-                        }}
+                        onPress={() => setDraftMode("classic")}
                         style={[
-                          styles.holeChip,
-                          draftHoles === h ? styles.holeChipOn : styles.holeChipOff,
+                          styles.modeCard,
+                          draftMode === "classic"
+                            ? styles.modeCardOn
+                            : styles.modeCardOff,
                         ]}
                       >
                         <Text
                           style={
-                            draftHoles === h ? styles.holeChipTextOn : styles.holeChipTextOff
+                            draftMode === "classic"
+                              ? styles.modeCardTitleOn
+                              : styles.modeCardTitleOff
                           }
                         >
-                          {h} holes
+                          Classic
+                        </Text>
+                        <Text
+                          style={
+                            draftMode === "classic"
+                              ? styles.modeCardSubOn
+                              : styles.modeCardSubOff
+                          }
+                        >
+                          Track points
                         </Text>
                       </Pressable>
-                    ))}
-                  </View>
-                  <Text style={[styles.modalKicker, { marginTop: 14 }]}>
-                    Custom
-                  </Text>
-                  <TextInput
-                    value={draftCustom}
-                    onChangeText={(t) => {
-                      setDraftCustom(t);
-                      const n = parseInt(t, 10);
-                      if (!Number.isNaN(n)) setDraftHoles(n);
-                    }}
-                    keyboardType="number-pad"
-                    placeholder="e.g. 27"
-                    placeholderTextColor={`${GolfColors.sage}99`}
-                    style={styles.modalInput}
-                  />
-                </View>
-                <View style={{ marginTop: 20 }}>
-                  <Text style={styles.modalKicker}>Game mode</Text>
-                  <View style={styles.modeRow}>
-                    <Pressable
-                      onPress={() => setDraftMode("classic")}
-                      style={[
-                        styles.modeCard,
-                        draftMode === "classic" ? styles.modeCardOn : styles.modeCardOff,
-                      ]}
-                    >
-                      <Text
-                        style={
-                          draftMode === "classic"
-                            ? styles.modeCardTitleOn
-                            : styles.modeCardTitleOff
-                        }
+                      <View style={{ width: 10 }} />
+                      <View
+                        style={[
+                          styles.modeCard,
+                          styles.modeCardOff,
+                          styles.modeCardBeerRunDisabled,
+                          draftMode === "beer_run"
+                            ? styles.modeCardBeerRunActiveOutline
+                            : null,
+                        ]}
+                        accessibilityState={{ disabled: true }}
                       >
-                        Classic
-                      </Text>
-                      <Text
-                        style={
-                          draftMode === "classic"
-                            ? styles.modeCardSubOn
-                            : styles.modeCardSubOff
-                        }
-                      >
-                        Track points
-                      </Text>
-                    </Pressable>
-                    <View style={{ width: 10 }} />
-                    <View
-                      style={[
-                        styles.modeCard,
-                        styles.modeCardOff,
-                        styles.modeCardBeerRunDisabled,
-                        draftMode === "beer_run"
-                          ? styles.modeCardBeerRunActiveOutline
-                          : null,
-                      ]}
-                      accessibilityState={{ disabled: true }}
-                    >
-                      <Text style={styles.modeCardTitleDisabled}>Beer Run</Text>
-                      <Text style={styles.modeCardSubDisabled}>
-                        To be implemented
-                      </Text>
-                      {draftMode === "beer_run" ? (
-                        <Text style={styles.modeCardBeerRunCurrentHint}>
-                          Currently selected for this lobby
+                        <Text style={styles.modeCardTitleDisabled}>
+                          Beer Run
                         </Text>
-                      ) : null}
+                        <Text style={styles.modeCardSubDisabled}>
+                          To be implemented
+                        </Text>
+                        {draftMode === "beer_run" ? (
+                          <Text style={styles.modeCardBeerRunCurrentHint}>
+                            Currently selected for this lobby
+                          </Text>
+                        ) : null}
+                      </View>
+                    </View>
+                  </View>
+                  <View style={{ marginTop: 20 }}>
+                    <Text style={styles.modalKicker}>
+                      Starting gold per player
+                    </Text>
+                    <View style={styles.startGoldWrap}>
+                      {Array.from({ length: 11 }, (_, i) => i).map((n) => (
+                        <Pressable
+                          key={n}
+                          onPress={() => setDraftStartingPoints(n)}
+                          style={[
+                            styles.startGoldChip,
+                            draftStartingPoints === n
+                              ? styles.startGoldChipOn
+                              : styles.startGoldChipOff,
+                          ]}
+                        >
+                          <Text
+                            style={
+                              draftStartingPoints === n
+                                ? styles.startGoldChipTextOn
+                                : styles.startGoldChipTextOff
+                            }
+                          >
+                            {n}
+                          </Text>
+                        </Pressable>
+                      ))}
                     </View>
                   </View>
                 </View>
-                <View style={{ marginTop: 20 }}>
-                  <Text style={styles.modalKicker}>
-                    Starting gold per player
-                  </Text>
-                  <View style={styles.startGoldWrap}>
-                    {Array.from({ length: 11 }, (_, i) => i).map((n) => (
-                      <Pressable
-                        key={n}
-                        onPress={() => setDraftStartingPoints(n)}
-                        style={[
-                          styles.startGoldChip,
-                          draftStartingPoints === n
-                            ? styles.startGoldChipOn
-                            : styles.startGoldChipOff,
-                        ]}
-                      >
-                        <Text
-                          style={
-                            draftStartingPoints === n
-                              ? styles.startGoldChipTextOn
-                              : styles.startGoldChipTextOff
-                          }
-                        >
-                          {n}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
+                <View style={styles.modalActions}>
+                  <Pressable onPress={closeSettingsModal}>
+                    <Text style={styles.modalClose}>Close</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={saveSettingsModal}
+                    style={styles.modalSaveWrap}
+                  >
+                    <Text style={styles.modalSave}>Save</Text>
+                  </Pressable>
                 </View>
-              </View>
-              <View style={styles.modalActions}>
-                <Pressable onPress={closeSettingsModal}>
-                  <Text style={styles.modalClose}>Close</Text>
-                </Pressable>
-                <Pressable
-                  onPress={saveSettingsModal}
-                  style={styles.modalSaveWrap}
-                >
-                  <Text style={styles.modalSave}>Save</Text>
-                </Pressable>
-              </View>
               </View>
             </View>
           </View>
@@ -809,18 +845,30 @@ function PlayerRow({
         )}
       </View>
       <View style={{ flex: 1 }}>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center" }}>
-          <Text style={[styles.playerName, isMe ? styles.playerNameBold : null]}>
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={[styles.playerName, isMe ? styles.playerNameBold : null]}
+          >
             {player.name}
           </Text>
-          {isMe ? (
-            <Badge label="you" color="#60A5FA" marginLeft={8} />
-          ) : null}
+          {isMe ? <Badge label="you" color="#60A5FA" marginLeft={8} /> : null}
           {player.isHost ? (
-            <Badge label="host" color={GolfColors.gold} marginLeft={isMe ? 6 : 8} />
+            <Badge
+              label="host"
+              color={GolfColors.gold}
+              marginLeft={isMe ? 6 : 8}
+            />
           ) : null}
         </View>
-        <Text style={styles.joinedSub}>Joined {formatJoinTime(player.joinedAt)}</Text>
+        <Text style={styles.joinedSub}>
+          Joined {formatJoinTime(player.joinedAt)}
+        </Text>
       </View>
       {showKick && onKick ? (
         <Pressable

@@ -31,7 +31,11 @@ export function FairwayBackdrop() {
             fx="55%"
             fy="2.5%"
           >
-            <Stop offset="0%" stopColor="rgb(212,175,55)" stopOpacity={46 / 255} />
+            <Stop
+              offset="0%"
+              stopColor="rgb(212,175,55)"
+              stopOpacity={46 / 255}
+            />
             <Stop offset="100%" stopColor="rgb(212,175,55)" stopOpacity={0} />
           </RadialGradient>
           <RadialGradient
@@ -43,7 +47,11 @@ export function FairwayBackdrop() {
             fx="0%"
             fy="92%"
           >
-            <Stop offset="0%" stopColor="rgb(74,138,158)" stopOpacity={31 / 255} />
+            <Stop
+              offset="0%"
+              stopColor="rgb(74,138,158)"
+              stopOpacity={31 / 255}
+            />
             <Stop offset="100%" stopColor="rgb(74,138,158)" stopOpacity={0} />
           </RadialGradient>
         </Defs>
@@ -68,14 +76,14 @@ export function FairwayBackdrop() {
 export function FairwayAmbientShapes() {
   const { height: h } = useWindowDimensions();
 
-  const blobs: Array<{
+  const blobs: {
     top?: number;
     bottom?: number;
     left?: number;
     right?: number;
     size: number;
     opacity: number;
-  }> = [
+  }[] = [
     { top: h * 0.06, right: -24, size: 160, opacity: 0.06 },
     { top: h * 0.35, left: -40, size: 200, opacity: 0.045 },
     { bottom: h * 0.12, right: -10, size: 140, opacity: 0.055 },

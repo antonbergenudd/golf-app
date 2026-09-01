@@ -9,7 +9,12 @@ type Props = {
   variant?: "gold" | "muted";
 };
 
-export function AppButton({ label, onPress, loading, variant = "gold" }: Props) {
+export function AppButton({
+  label,
+  onPress,
+  loading,
+  variant = "gold",
+}: Props) {
   const gold = variant === "gold";
   return (
     <Pressable

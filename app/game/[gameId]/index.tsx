@@ -1,6 +1,11 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, useGlobalSearchParams, useLocalSearchParams, usePathname } from "expo-router";
+import {
+  router,
+  useGlobalSearchParams,
+  useLocalSearchParams,
+  usePathname,
+} from "expo-router";
 import {
   useCallback,
   useEffect,
@@ -35,10 +40,7 @@ import {
   useRegisterGameTabFab,
   type GameFabRegistration,
 } from "@/context/GameShellContext";
-import {
-  isAttackActionCard,
-  isChallengeCardType,
-} from "@/models/card";
+import { isAttackActionCard, isChallengeCardType } from "@/models/card";
 import { gameCurrencyLabel, parseGameMode } from "@/models/gameMode";
 import type { Lobby } from "@/models/lobby";
 import { DatabaseService, databaseService } from "@/services/databaseService";
@@ -124,17 +126,13 @@ function isActionMarketRowCard(
   if (Number(a.hole ?? 0) !== currentHole) return false;
   if (isActionMarketOffer(a)) return true;
   return (
-    a.offerConsumed === true ||
-    a.banked === true ||
-    a.pendingBank === true
+    a.offerConsumed === true || a.banked === true || a.pendingBank === true
   );
 }
 
 function isActionBought(a: Record<string, unknown>): boolean {
   return (
-    a.banked === true ||
-    a.pendingBank === true ||
-    a.offerConsumed === true
+    a.banked === true || a.pendingBank === true || a.offerConsumed === true
   );
 }
 
@@ -184,9 +182,7 @@ export default function GameScreen() {
   });
 
   const resolvedGameId =
-    paramFirst(local.gameId) ||
-    paramFirst(global.gameId) ||
-    pathGameId;
+    paramFirst(local.gameId) || paramFirst(global.gameId) || pathGameId;
   const resolvedPlayerId =
     paramFirst(local.playerId) || paramFirst(global.playerId);
   const resolvedLobbyId =
@@ -268,10 +264,10 @@ export default function GameScreen() {
     [],
   );
 
-  const [cardInspect, setCardInspect] = useState<
-    | null
-    | { variant: "challenge" | "market"; card: Record<string, unknown> }
-  >(null);
+  const [cardInspect, setCardInspect] = useState<null | {
+    variant: "challenge" | "market";
+    card: Record<string, unknown>;
+  }>(null);
 
   const openCardInspect = useCallback(
     (payload: {
@@ -358,9 +354,7 @@ export default function GameScreen() {
   }, [gameId, playerId]);
 
   const cards = (myCardsDoc?.cards as Record<string, unknown>[]) ?? [];
-  const challenges = cards.filter((c) =>
-    isChallengeCardType(String(c.type)),
-  );
+  const challenges = cards.filter((c) => isChallengeCardType(String(c.type)));
   const actions = cards.filter((c) => c.type === "action");
   const currentHole = game?.currentHole ?? 1;
   const marketOffers = actions.filter((a) =>
@@ -465,8 +459,7 @@ export default function GameScreen() {
     () =>
       scoreRows.find(
         (r) =>
-          String(r.player_id) === playerId &&
-          Number(r.hole) === currentHole,
+          String(r.player_id) === playerId && Number(r.hole) === currentHole,
       ),
     [scoreRows, playerId, currentHole],
   );
@@ -596,10 +589,7 @@ export default function GameScreen() {
     GameBlur.blurActiveElementForModalWeb();
     const maxH = Math.max(
       240,
-      windowHeight -
-        bottomOverlayHeight -
-        Math.max(insets.top, 10) -
-        14,
+      windowHeight - bottomOverlayHeight - Math.max(insets.top, 10) - 14,
     );
     const h0 = liveStripHeightRef.current;
     const B = bottomOverlayHeight;
@@ -789,9 +779,7 @@ export default function GameScreen() {
   const openScoreModal = useCallback(() => {
     GameBlur.blurActiveElementForModalWeb();
     setDraftStrokes(
-      hasHoleScore && savedStrokesForHole != null
-        ? savedStrokesForHole
-        : 4,
+      hasHoleScore && savedStrokesForHole != null ? savedStrokesForHole : 4,
     );
     setScoreModalOpen(true);
   }, [hasHoleScore, savedStrokesForHole]);
@@ -811,12 +799,10 @@ export default function GameScreen() {
       setScoreRows((prev) => {
         const hole = game!.currentHole;
         const rest = prev.filter(
-          (r) =>
-            String(r.player_id) !== playerId || Number(r.hole) !== hole,
+          (r) => String(r.player_id) !== playerId || Number(r.hole) !== hole,
         );
         const prior = prev.find(
-          (r) =>
-            String(r.player_id) === playerId && Number(r.hole) === hole,
+          (r) => String(r.player_id) === playerId && Number(r.hole) === hole,
         );
         return [
           ...rest,
@@ -866,8 +852,8 @@ export default function GameScreen() {
   useRegisterGameTabFab("index", fabRegistration);
 
   const canReroll =
-    (activeTab === "challenges" ? challengeRerollsLeft : actionRerollsLeft) > 0 &&
-    busy === null;
+    (activeTab === "challenges" ? challengeRerollsLeft : actionRerollsLeft) >
+      0 && busy === null;
 
   if (!game) {
     return (
@@ -878,10 +864,8 @@ export default function GameScreen() {
   }
 
   const modeLabel = gameCurrencyLabel(game.mode, { short: true });
-  const tabSliderW =
-    tabBarWidth > 0 ? (tabBarWidth - 8) / 2 : 0;
-  const tabSliderLeft =
-    activeTab === "challenges" ? 4 : 4 + tabSliderW;
+  const tabSliderW = tabBarWidth > 0 ? (tabBarWidth - 8) / 2 : 0;
+  const tabSliderLeft = activeTab === "challenges" ? 4 : 4 + tabSliderW;
 
   return (
     <>
@@ -901,7 +885,9 @@ export default function GameScreen() {
 
               <View style={styles.headerCenter} pointerEvents="none">
                 <MaterialIcons name="flag" size={18} color={GolfColors.gold} />
-                <Text style={styles.headerHoleText}>Hole {game.currentHole}</Text>
+                <Text style={styles.headerHoleText}>
+                  Hole {game.currentHole}
+                </Text>
               </View>
 
               {isHost ? (
@@ -985,7 +971,9 @@ export default function GameScreen() {
                         color={GolfColors.mist}
                       />
                     </View>
-                    <Text style={styles.miniStatValue}>{playedActionCount}</Text>
+                    <Text style={styles.miniStatValue}>
+                      {playedActionCount}
+                    </Text>
                     <Text style={styles.miniStatCap}>Played</Text>
                   </View>
                 </View>
@@ -1058,7 +1046,10 @@ export default function GameScreen() {
             >
               {busy === "reroll" ? (
                 <View style={styles.rerollBtnBody}>
-                  <ActivityIndicator color={GolfColors.forestDeep} size="small" />
+                  <ActivityIndicator
+                    color={GolfColors.forestDeep}
+                    size="small"
+                  />
                 </View>
               ) : (
                 <View style={styles.rerollBtnBody}>
@@ -1194,11 +1185,7 @@ export default function GameScreen() {
                         keyboardShouldPersistTaps="handled"
                       >
                         {events.map((ev) => (
-                          <LiveEventRow
-                            key={String(ev.id)}
-                            ev={ev}
-                            compact
-                          />
+                          <LiveEventRow key={String(ev.id)} ev={ev} compact />
                         ))}
                       </ScrollView>
                     )}
@@ -1243,10 +1230,7 @@ export default function GameScreen() {
                 },
               ]}
             >
-              <SafeAreaView
-                style={styles.liveOverlaySafe}
-                edges={["bottom"]}
-              >
+              <SafeAreaView style={styles.liveOverlaySafe} edges={["bottom"]}>
                 <View style={styles.liveOverlayHeader}>
                   <View style={styles.liveTitleRow}>
                     <MaterialIcons
@@ -1411,7 +1395,11 @@ function CardInspectModal({
         </View>
         <View style={styles.inspectHero}>
           <View style={styles.inspectIconCircle}>
-            <MaterialIcons name="sports-golf" size={36} color={GolfColors.gold} />
+            <MaterialIcons
+              name="sports-golf"
+              size={36}
+              color={GolfColors.gold}
+            />
           </View>
           <Text style={styles.inspectTitle}>{title}</Text>
         </View>
@@ -1441,20 +1429,23 @@ function CardInspectModal({
               <MaterialIcons name="casino" size={16} color={GolfColors.gold} />
               <Text style={styles.inspectWheelClubText}>
                 Your club:{" "}
-                <Text style={styles.inspectWheelClubValue}>{wheelClubLabel}</Text>
+                <Text style={styles.inspectWheelClubValue}>
+                  {wheelClubLabel}
+                </Text>
               </Text>
             </View>
           ) : null}
           {wheel && !wheelClubLabel ? (
             <Text style={styles.inspectMetaHint}>
-              Starts with the Wheel of Doom — spin first, then tap Start again to
-              send for verification.
+              Starts with the Wheel of Doom — spin first, then tap Start again
+              to send for verification.
             </Text>
           ) : null}
         </View>
         {claimed ? null : pending ? (
           <Text style={styles.inspectFooterHint}>
-            Waiting for another player to mark this challenge succeeded or failed.
+            Waiting for another player to mark this challenge succeeded or
+            failed.
           </Text>
         ) : (
           <Pressable
@@ -1629,99 +1620,101 @@ function ChallengeTile({
           pending && !claimed ? styles.tileChallengePending : null,
         ]}
       >
-      <View
-        style={[
-          styles.tileRibbon,
-          claimed && styles.tileRibbonClaimed,
-          pending && !claimed && styles.tileRibbonPending,
-        ]}
-      >
-        <Text
-          style={[
-            styles.tileRibbonText,
-            claimed && styles.tileRibbonTextInverse,
-          ]}
-        >
-          +{pts}
-        </Text>
-      </View>
-
-      <View style={styles.tileStars}>
-        {[0, 1, 2].map((i) => (
-          <MaterialIcons
-            key={i}
-            name={i < stars ? "star" : "star-border"}
-            size={12}
-            color={
-              i < stars ? GolfColors.gold : "rgba(107,152,114,0.35)"
-            }
-          />
-        ))}
-      </View>
-
-      <View style={styles.tileIconWrap}>
         <View
           style={[
-            styles.tileIconBg,
-            claimed
-              ? styles.tileIconBgClaimed
-              : pending
-                ? styles.tileIconBgPending
-                : styles.tileIconBgIdle,
+            styles.tileRibbon,
+            claimed && styles.tileRibbonClaimed,
+            pending && !claimed && styles.tileRibbonPending,
           ]}
         >
-          <MaterialIcons
-            name="sports-golf"
-            size={26}
-            color={
-              claimed ? GolfColors.gold : pending ? GolfColors.gold : GolfColors.mist
-            }
-          />
-        </View>
-      </View>
-
-      <Text style={styles.tileTitle} numberOfLines={2}>
-        {String(card.title ?? "")}
-      </Text>
-
-      {needsWheel && wheelClub && !claimed ? (
-        <View style={styles.tileWheelClub}>
-          <Text style={styles.tileWheelClubKicker} numberOfLines={1}>
-            Wheel club
-          </Text>
-          <Text style={styles.tileWheelClubName} numberOfLines={1}>
-            {wheelClub}
-          </Text>
-        </View>
-      ) : null}
-
-      <View style={styles.tileFooter}>
-        {claimed ? (
-          <View style={styles.tileStatusDone}>
-            <MaterialIcons name="check" size={14} color={GolfColors.gold} />
-            <Text style={styles.tileStatusDoneText}>Done</Text>
-          </View>
-        ) : pending ? (
-          <View style={styles.tileStatusPending}>
-            <Text style={styles.tileStatusPendingText}>Pending</Text>
-          </View>
-        ) : (
-          <Pressable
-            onPress={onStart}
-            disabled={busy !== null}
-            style={busy !== null ? { opacity: 0.5 } : undefined}
+          <Text
+            style={[
+              styles.tileRibbonText,
+              claimed && styles.tileRibbonTextInverse,
+            ]}
           >
-            <View
-              style={[
-                styles.tilePrimaryBtn,
-                busy !== null && { opacity: 0.5 },
-              ]}
-            >
-              <Text style={styles.tilePrimaryBtnText}>Start</Text>
+            +{pts}
+          </Text>
+        </View>
+
+        <View style={styles.tileStars}>
+          {[0, 1, 2].map((i) => (
+            <MaterialIcons
+              key={i}
+              name={i < stars ? "star" : "star-border"}
+              size={12}
+              color={i < stars ? GolfColors.gold : "rgba(107,152,114,0.35)"}
+            />
+          ))}
+        </View>
+
+        <View style={styles.tileIconWrap}>
+          <View
+            style={[
+              styles.tileIconBg,
+              claimed
+                ? styles.tileIconBgClaimed
+                : pending
+                  ? styles.tileIconBgPending
+                  : styles.tileIconBgIdle,
+            ]}
+          >
+            <MaterialIcons
+              name="sports-golf"
+              size={26}
+              color={
+                claimed
+                  ? GolfColors.gold
+                  : pending
+                    ? GolfColors.gold
+                    : GolfColors.mist
+              }
+            />
+          </View>
+        </View>
+
+        <Text style={styles.tileTitle} numberOfLines={2}>
+          {String(card.title ?? "")}
+        </Text>
+
+        {needsWheel && wheelClub && !claimed ? (
+          <View style={styles.tileWheelClub}>
+            <Text style={styles.tileWheelClubKicker} numberOfLines={1}>
+              Wheel club
+            </Text>
+            <Text style={styles.tileWheelClubName} numberOfLines={1}>
+              {wheelClub}
+            </Text>
+          </View>
+        ) : null}
+
+        <View style={styles.tileFooter}>
+          {claimed ? (
+            <View style={styles.tileStatusDone}>
+              <MaterialIcons name="check" size={14} color={GolfColors.gold} />
+              <Text style={styles.tileStatusDoneText}>Done</Text>
             </View>
-          </Pressable>
-        )}
-      </View>
+          ) : pending ? (
+            <View style={styles.tileStatusPending}>
+              <Text style={styles.tileStatusPendingText}>Pending</Text>
+            </View>
+          ) : (
+            <Pressable
+              onPress={onStart}
+              disabled={busy !== null}
+              style={busy !== null ? { opacity: 0.5 } : undefined}
+            >
+              <View
+                style={[
+                  styles.tilePrimaryBtn,
+                  busy !== null && { opacity: 0.5 },
+                ]}
+              >
+                <Text style={styles.tilePrimaryBtnText}>Start</Text>
+              </View>
+            </Pressable>
+          )}
+        </View>
       </View>
     </Pressable>
   );
@@ -1761,85 +1754,79 @@ function MarketTile({
           !bought && !canAfford ? { opacity: 0.55 } : null,
         ]}
       >
-      <View
-        style={[styles.tileRibbon, bought && styles.tileRibbonClaimed]}
-      >
-        <Text
-          style={[
-            styles.tileRibbonText,
-            bought && styles.tileRibbonTextInverse,
-          ]}
-        >
-          -{cost}
-        </Text>
-      </View>
-
-      <View style={styles.tileStars}>
-        {[0, 1, 2].map((i) => (
-          <MaterialIcons
-            key={i}
-            name={i < stars ? "star" : "star-border"}
-            size={12}
-            color={
-              i < stars
-                ? GolfColors.gold
-                : "rgba(107,152,114,0.35)"
-            }
-          />
-        ))}
-      </View>
-
-      <View style={styles.tileIconWrap}>
-        <View
-          style={[
-            styles.tileIconBg,
-            bought ? styles.tileIconBgClaimed : styles.tileIconBgIdle,
-          ]}
-        >
-          <MaterialIcons
-            name={attack ? "bolt" : "eco"}
-            size={26}
-            color={
-              attack
-                ? GolfColors.danger
-                : bought
-                  ? GolfColors.gold
-                  : GolfColors.mist
-            }
-          />
-        </View>
-      </View>
-
-      <Text style={styles.tileTitle} numberOfLines={2}>
-        {String(card.title ?? "")}
-      </Text>
-
-      <View style={styles.tileFooter}>
-        {bought ? (
-          <View style={styles.tileStatusDone}>
-            <Text style={styles.tileStatusDoneText}>Bought</Text>
-          </View>
-        ) : canAfford ? (
-          <Pressable
-            onPress={onBuy}
-            disabled={busy !== null}
-            style={busy !== null ? { opacity: 0.5 } : undefined}
+        <View style={[styles.tileRibbon, bought && styles.tileRibbonClaimed]}>
+          <Text
+            style={[
+              styles.tileRibbonText,
+              bought && styles.tileRibbonTextInverse,
+            ]}
           >
-            <View
-              style={[
-                styles.tilePrimaryBtn,
-                busy !== null && { opacity: 0.5 },
-              ]}
-            >
-              <Text style={styles.tilePrimaryBtnText}>Buy</Text>
-            </View>
-          </Pressable>
-        ) : (
-          <View style={styles.tilePoor}>
-            <Text style={styles.tilePoorText}>Not enough</Text>
+            -{cost}
+          </Text>
+        </View>
+
+        <View style={styles.tileStars}>
+          {[0, 1, 2].map((i) => (
+            <MaterialIcons
+              key={i}
+              name={i < stars ? "star" : "star-border"}
+              size={12}
+              color={i < stars ? GolfColors.gold : "rgba(107,152,114,0.35)"}
+            />
+          ))}
+        </View>
+
+        <View style={styles.tileIconWrap}>
+          <View
+            style={[
+              styles.tileIconBg,
+              bought ? styles.tileIconBgClaimed : styles.tileIconBgIdle,
+            ]}
+          >
+            <MaterialIcons
+              name={attack ? "bolt" : "eco"}
+              size={26}
+              color={
+                attack
+                  ? GolfColors.danger
+                  : bought
+                    ? GolfColors.gold
+                    : GolfColors.mist
+              }
+            />
           </View>
-        )}
-      </View>
+        </View>
+
+        <Text style={styles.tileTitle} numberOfLines={2}>
+          {String(card.title ?? "")}
+        </Text>
+
+        <View style={styles.tileFooter}>
+          {bought ? (
+            <View style={styles.tileStatusDone}>
+              <Text style={styles.tileStatusDoneText}>Bought</Text>
+            </View>
+          ) : canAfford ? (
+            <Pressable
+              onPress={onBuy}
+              disabled={busy !== null}
+              style={busy !== null ? { opacity: 0.5 } : undefined}
+            >
+              <View
+                style={[
+                  styles.tilePrimaryBtn,
+                  busy !== null && { opacity: 0.5 },
+                ]}
+              >
+                <Text style={styles.tilePrimaryBtnText}>Buy</Text>
+              </View>
+            </Pressable>
+          ) : (
+            <View style={styles.tilePoor}>
+              <Text style={styles.tilePoorText}>Not enough</Text>
+            </View>
+          )}
+        </View>
       </View>
     </Pressable>
   );
@@ -1859,9 +1846,7 @@ function LiveEventRow({
   const rel = formatShortRelativeTime(ts);
 
   return (
-    <View
-      style={[styles.liveRow, compact ? styles.liveRowCompact : null]}
-    >
+    <View style={[styles.liveRow, compact ? styles.liveRowCompact : null]}>
       <View
         style={[
           styles.liveIconBubble,

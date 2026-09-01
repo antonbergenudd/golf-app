@@ -135,17 +135,25 @@ export function formatVictimAttackOutcome(
 }
 
 /** Deserialize outcome stored in `game_events.event_data.outcome` (jsonb). */
-export function parseAttackOutcomeFromEvent(raw: unknown): AttackResolveOutcome | null {
+export function parseAttackOutcomeFromEvent(
+  raw: unknown,
+): AttackResolveOutcome | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
   const kind = String(r.kind ?? "");
   switch (kind) {
     case "stole_card":
-      return { kind: "stole_card", cardTitle: String(r.cardTitle ?? "Action card") };
+      return {
+        kind: "stole_card",
+        cardTitle: String(r.cardTitle ?? "Action card"),
+      };
     case "no_stealable_cards":
       return { kind: "no_stealable_cards" };
     case "destroyed_card":
-      return { kind: "destroyed_card", cardTitle: String(r.cardTitle ?? "action") };
+      return {
+        kind: "destroyed_card",
+        cardTitle: String(r.cardTitle ?? "action"),
+      };
     case "nothing_to_destroy":
       return { kind: "nothing_to_destroy" };
     case "market_locked":
