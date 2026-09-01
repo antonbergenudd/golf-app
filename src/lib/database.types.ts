@@ -459,6 +459,66 @@ export type Database = {
         }
         Returns: Json
       }
+      bank_offer_action: {
+        Args: {
+          p_card_hole: number
+          p_card_id: string
+          p_game_id: string
+          p_player_id: string
+        }
+        Returns: undefined
+      }
+      mark_hole_action_consumed: {
+        Args: {
+          p_card_hole: number
+          p_card_id: string
+          p_game_id: string
+          p_player_id: string
+        }
+        Returns: undefined
+      }
+      discard_banked_action_card: {
+        Args: {
+          p_card_hole: number
+          p_card_id: string
+          p_game_id: string
+          p_player_id: string
+        }
+        Returns: undefined
+      }
+      discard_pending_action_card: {
+        Args: {
+          p_card_hole: number
+          p_card_id: string
+          p_game_id: string
+          p_player_id: string
+        }
+        Returns: undefined
+      }
+      remove_action_card: {
+        Args: {
+          p_card_hole: number
+          p_card_id: string
+          p_game_id: string
+          p_player_id: string
+        }
+        Returns: undefined
+      }
+      resolve_attack: {
+        Args: {
+          p_attacker_id: string
+          p_attacker_name: string
+          p_card: Json
+          p_game_id: string
+          p_target_id: string
+          p_target_name: string
+        }
+        Returns: Json
+      }
+      resolve_action_steal_copies: {
+        Args: { p_card: Json; p_game_id: string; p_source_player_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

@@ -221,6 +221,15 @@ export async function markHoleActionConsumed(input: {
   cardId: string;
   cardHole: number;
 }): Promise<void> {
+  const { error } = await supabase.rpc("mark_hole_action_consumed", {
+    p_game_id: input.gameId,
+    p_player_id: input.playerId,
+    p_card_id: input.cardId,
+    p_card_hole: input.cardHole,
+  });
+  if (!error) return;
+  if (!rpcFunctionMissing(error)) throw new Error(error.message);
+
   const { data: g } = await supabase
     .from("games")
     .select("*")
@@ -255,6 +264,15 @@ export async function deleteBankedActionCard(input: {
   cardId: string;
   cardHole: number;
 }): Promise<void> {
+  const { error } = await supabase.rpc("discard_banked_action_card", {
+    p_game_id: input.gameId,
+    p_player_id: input.playerId,
+    p_card_id: input.cardId,
+    p_card_hole: input.cardHole,
+  });
+  if (!error) return;
+  if (!rpcFunctionMissing(error)) throw new Error(error.message);
+
   const pcId = playerCardsId(input.gameId, input.playerId);
   await mutatePlayerCards(pcId, (cards) => {
     let idx = cards.findIndex((c) => {
@@ -282,6 +300,15 @@ export async function deletePendingBankedActionCard(input: {
   cardId: string;
   cardHole: number;
 }): Promise<void> {
+  const { error } = await supabase.rpc("discard_pending_action_card", {
+    p_game_id: input.gameId,
+    p_player_id: input.playerId,
+    p_card_id: input.cardId,
+    p_card_hole: input.cardHole,
+  });
+  if (!error) return;
+  if (!rpcFunctionMissing(error)) throw new Error(error.message);
+
   const pcId = playerCardsId(input.gameId, input.playerId);
   await mutatePlayerCards(pcId, (cards) => {
     let idx = cards.findIndex((c) => {
@@ -378,6 +405,15 @@ export async function removeActionCardByIdHole(input: {
   cardId: string;
   cardHole: number;
 }): Promise<void> {
+  const { error } = await supabase.rpc("remove_action_card", {
+    p_game_id: input.gameId,
+    p_player_id: input.playerId,
+    p_card_id: input.cardId,
+    p_card_hole: input.cardHole,
+  });
+  if (!error) return;
+  if (!rpcFunctionMissing(error)) throw new Error(error.message);
+
   const pcId = playerCardsId(input.gameId, input.playerId);
   await mutatePlayerCards(pcId, (cards) => {
     const idx = cards.findIndex((c) => {
@@ -562,6 +598,15 @@ export async function bankHoleOfferAction(input: {
   cardId: string;
   cardHole: number;
 }): Promise<void> {
+  const { error } = await supabase.rpc("bank_offer_action", {
+    p_game_id: input.gameId,
+    p_player_id: input.playerId,
+    p_card_id: input.cardId,
+    p_card_hole: input.cardHole,
+  });
+  if (!error) return;
+  if (!rpcFunctionMissing(error)) throw new Error(error.message);
+
   const { data: gameDoc } = await supabase
     .from("games")
     .select("*")
@@ -715,6 +760,17 @@ export async function resolvePlayedAttackCard(input: {
   targetPlayerName: string;
   card: Record<string, unknown>;
 }): Promise<AttackResolveOutcome> {
+  const rpc = await supabase.rpc("resolve_attack", {
+    p_game_id: input.gameId,
+    p_attacker_id: input.attackerId,
+    p_attacker_name: input.attackerName,
+    p_target_id: input.targetPlayerId,
+    p_target_name: input.targetPlayerName,
+    p_card: asJson(input.card),
+  });
+  if (!rpc.error) return rpc.data as unknown as AttackResolveOutcome;
+  if (!rpcFunctionMissing(rpc.error)) throw new Error(rpc.error.message);
+
   const id = String(input.card.id ?? "");
   const cardTitle = String(input.card.title ?? "Attack");
 
@@ -800,6 +856,14 @@ export async function resolveActionStealCopiesForPlayedAction(input: {
   sourcePlayerId: string;
   sourceActionCard: Record<string, unknown>;
 }): Promise<void> {
+  const { error } = await supabase.rpc("resolve_action_steal_copies", {
+    p_game_id: input.gameId,
+    p_source_player_id: input.sourcePlayerId,
+    p_card: asJson(input.sourceActionCard),
+  });
+  if (!error) return;
+  if (!rpcFunctionMissing(error)) throw new Error(error.message);
+
   const title = String(input.sourceActionCard.title ?? "")
     .toLowerCase()
     .trim();
