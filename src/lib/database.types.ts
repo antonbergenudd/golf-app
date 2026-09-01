@@ -407,6 +407,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _discard_action_card: {
+        Args: {
+          p_card_hole: number
+          p_card_id: string
+          p_game_id: string
+          p_mode: string
+          p_not_found_msg: string
+          p_player_id: string
+        }
+        Returns: undefined
+      }
       apply_point_deltas: {
         Args: { p_deltas: Json; p_game_id: string }
         Returns: Json
@@ -422,43 +433,6 @@ export type Database = {
         }
         Returns: Json
       }
-      claim_challenge: {
-        Args: {
-          p_card_hole: number
-          p_card_id: string
-          p_game_id: string
-          p_player_id: string
-        }
-        Returns: Json
-      }
-      is_game_member: {
-        Args: { p_game_id: string; p_player_id: string }
-        Returns: boolean
-      }
-      request_challenge_verification: {
-        Args: {
-          p_card_hole: number
-          p_card_id: string
-          p_claimant_id: string
-          p_claimant_name: string
-          p_description: string
-          p_game_id: string
-          p_points_to_award: number
-          p_title: string
-          p_type: string
-        }
-        Returns: string
-      }
-      resolve_challenge_verification: {
-        Args: {
-          p_game_id: string
-          p_outcome: string
-          p_verification_id: string
-          p_verifier_id: string
-          p_verifier_name: string
-        }
-        Returns: Json
-      }
       bank_offer_action: {
         Args: {
           p_card_hole: number
@@ -468,14 +442,14 @@ export type Database = {
         }
         Returns: undefined
       }
-      mark_hole_action_consumed: {
+      claim_challenge: {
         Args: {
           p_card_hole: number
           p_card_id: string
           p_game_id: string
           p_player_id: string
         }
-        Returns: undefined
+        Returns: Json
       }
       discard_banked_action_card: {
         Args: {
@@ -495,6 +469,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      is_game_member: {
+        Args: { p_game_id: string; p_player_id: string }
+        Returns: boolean
+      }
+      mark_hole_action_consumed: {
+        Args: {
+          p_card_hole: number
+          p_card_id: string
+          p_game_id: string
+          p_player_id: string
+        }
+        Returns: undefined
+      }
       remove_action_card: {
         Args: {
           p_card_hole: number
@@ -502,6 +489,24 @@ export type Database = {
           p_game_id: string
           p_player_id: string
         }
+        Returns: undefined
+      }
+      request_challenge_verification: {
+        Args: {
+          p_card_hole: number
+          p_card_id: string
+          p_claimant_id: string
+          p_claimant_name: string
+          p_description: string
+          p_game_id: string
+          p_points_to_award: number
+          p_title: string
+          p_type: string
+        }
+        Returns: string
+      }
+      resolve_action_steal_copies: {
+        Args: { p_card: Json; p_game_id: string; p_source_player_id: string }
         Returns: undefined
       }
       resolve_attack: {
@@ -515,9 +520,15 @@ export type Database = {
         }
         Returns: Json
       }
-      resolve_action_steal_copies: {
-        Args: { p_card: Json; p_game_id: string; p_source_player_id: string }
-        Returns: undefined
+      resolve_challenge_verification: {
+        Args: {
+          p_game_id: string
+          p_outcome: string
+          p_verification_id: string
+          p_verifier_id: string
+          p_verifier_name: string
+        }
+        Returns: Json
       }
     }
     Enums: {
