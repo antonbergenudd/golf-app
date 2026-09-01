@@ -17,7 +17,7 @@ import {
   nowIso,
   subscribeTable,
 } from "./shared";
-import type { TablesInsert } from "../../lib/database.types";
+import type { TablesInsert, TablesUpdate } from "../../lib/database.types";
 
 export async function createLobby(input: {
   lobbyName: string;
@@ -241,32 +241,22 @@ export async function updateLobbyPlannedSettings(
   input: { holes: number; mode: GameMode; startingPoints?: number },
 ): Promise<void> {
   const h = Math.max(1, Math.floor(input.holes));
-  const sp =
-    input.startingPoints !== undefined
-      ? Math.min(10, Math.max(0, Math.floor(input.startingPoints)))
-      : undefined;
-  const now = nowIso();
+  const update: TablesUpdate<"lobbies"> = {
+    planned_holes: h,
+    planned_mode: gameModeValue(input.mode),
+    updated_at: nowIso(),
+  };
+  if (input.startingPoints !== undefined) {
+    update.starting_points = Math.min(
+      10,
+      Math.max(0, Math.floor(input.startingPoints)),
+    );
+  }
   const { error } = await supabase
     .from("lobbies")
-    .update({
-      planned_holes: h,
-      planned_mode: gameModeValue(input.mode),
-      updated_at: now,
-    })
+    .update(update)
     .eq("id", lobbyId);
   if (error) throw error;
-  if (sp !== undefined) {
-    const r = await supabase
-      .from("lobbies")
-      .update({ starting_points: sp, updated_at: nowIso() })
-      .eq("id", lobbyId);
-    if (r.error) {
-      console.warn(
-        "[lobbies] starting_points not updated (run DB migration if you use starting gold):",
-        r.error.message,
-      );
-    }
-  }
 }
 
 export async function updateLobbyStatus(

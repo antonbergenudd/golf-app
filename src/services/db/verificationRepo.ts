@@ -8,7 +8,6 @@ import {
   applyPointDeltas,
   asJson,
   channelTopic,
-  isChallengeVerificationDeputyColumnError,
   nowIso,
   playerCardsId,
 } from "./shared";
@@ -149,7 +148,11 @@ export async function requestChallengeVerification(input: {
   delete clearedChallenge.trialCombatDeputyId;
   delete clearedChallenge.trialCombatDeputyName;
 
-  const insertBase: Record<string, unknown> = {
+  const hasDeputy =
+    deputyId != null ||
+    (deputyName != null && String(deputyName).trim() !== "");
+
+  const insertPayload: TablesInsert<"challenge_verifications"> = {
     id: verificationId,
     game_id: input.gameId,
     claimant_id: input.claimantId,
@@ -162,32 +165,12 @@ export async function requestChallengeVerification(input: {
     challenge_type: String(input.cardSummary.type ?? ""),
     status: "pending",
     created_at: nowIso(),
+    ...(hasDeputy ? { deputy_id: deputyId, deputy_name: deputyName } : {}),
   };
 
-  const hasDeputy =
-    deputyId != null ||
-    (deputyName != null && String(deputyName).trim() !== "");
-
-  const insertPayload: Record<string, unknown> = { ...insertBase };
-  if (hasDeputy) {
-    insertPayload.deputy_id = deputyId;
-    insertPayload.deputy_name = deputyName;
-  }
-
-  let { error: cvInsertError } = await supabase
+  const { error: cvInsertError } = await supabase
     .from("challenge_verifications")
-    .insert(insertPayload as TablesInsert<"challenge_verifications">);
-
-  if (
-    cvInsertError &&
-    isChallengeVerificationDeputyColumnError(cvInsertError) &&
-    hasDeputy
-  ) {
-    const r2 = await supabase
-      .from("challenge_verifications")
-      .insert({ ...insertBase } as TablesInsert<"challenge_verifications">);
-    cvInsertError = r2.error;
-  }
+    .insert(insertPayload);
 
   if (cvInsertError) {
     throw new Error(

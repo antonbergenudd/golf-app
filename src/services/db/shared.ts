@@ -34,15 +34,6 @@ export function channelTopic(prefix: string): string {
   return `${prefix}_sub_${newUuid()}`;
 }
 
-/** Remote DB may not have applied `20260509180000_challenge_verifications_deputy.sql` yet. */
-export function isChallengeVerificationDeputyColumnError(error: {
-  code?: string;
-  message?: string;
-}): boolean {
-  const m = String(error.message ?? "").toLowerCase();
-  return m.includes("deputy_id") || m.includes("deputy_name");
-}
-
 export function generateLobbyCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let out = "";
