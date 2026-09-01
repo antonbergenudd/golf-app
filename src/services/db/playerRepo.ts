@@ -1,3 +1,4 @@
+import type { TablesUpdate } from "../../lib/database.types";
 import { supabase } from "../../lib/supabase";
 import { nowIso, subscribeTable } from "./shared";
 
@@ -29,7 +30,7 @@ export function subscribePlayers(
 
 export async function updatePlayer(
   playerId: string,
-  data: Record<string, unknown>,
+  data: TablesUpdate<"players">,
 ): Promise<void> {
   await supabase.from("players").update(data).eq("id", playerId);
 }

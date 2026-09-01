@@ -12,10 +12,12 @@ import * as cardRepo from "./cardRepo";
 import * as gameRepo from "./gameRepo";
 import {
   ALL_STATUSES_OPEN,
+  asJson,
   generateLobbyCode,
   nowIso,
   subscribeTable,
 } from "./shared";
+import type { TablesInsert } from "../../lib/database.types";
 
 export async function createLobby(input: {
   lobbyName: string;
@@ -59,7 +61,7 @@ export async function createLobby(input: {
 
   const { data, error } = await supabase
     .from("lobbies")
-    .insert(lobbyToInsert(lobby))
+    .insert(lobbyToInsert(lobby) as TablesInsert<"lobbies">)
     .select("id")
     .single();
   if (error) {
@@ -101,7 +103,7 @@ export async function joinLobby(
     await supabase
       .from("lobbies")
       .update({
-        players: lobbyPlayersToJson(updated),
+        players: asJson(lobbyPlayersToJson(updated)),
         updated_at: nowIso(),
       })
       .eq("id", lobby.id);
@@ -119,7 +121,7 @@ export async function joinLobby(
   await supabase
     .from("lobbies")
     .update({
-      players: lobbyPlayersToJson(updatedPlayers),
+      players: asJson(lobbyPlayersToJson(updatedPlayers)),
       updated_at: nowIso(),
     })
     .eq("id", lobby.id);
@@ -150,7 +152,7 @@ export async function leaveLobby(
       .update({
         host_id: players[0]!.id,
         host_name: players[0]!.name,
-        players: lobbyPlayersToJson(players),
+        players: asJson(lobbyPlayersToJson(players)),
         updated_at: nowIso(),
       })
       .eq("id", lobbyId);
@@ -159,7 +161,7 @@ export async function leaveLobby(
   await supabase
     .from("lobbies")
     .update({
-      players: lobbyPlayersToJson(players),
+      players: asJson(lobbyPlayersToJson(players)),
       updated_at: nowIso(),
     })
     .eq("id", lobbyId);
@@ -197,7 +199,7 @@ export async function kickPlayerFromLobby(
   await supabase
     .from("lobbies")
     .update({
-      players: lobbyPlayersToJson(players),
+      players: asJson(lobbyPlayersToJson(players)),
       updated_at: nowIso(),
     })
     .eq("id", lobbyId);

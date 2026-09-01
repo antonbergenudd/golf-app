@@ -92,7 +92,7 @@ export async function getPlayerScoresForGame(
     .eq("game_id", gameId)
     .eq("player_id", playerId)
     .order("hole");
-  return (data ?? []).map((row) => ({ id: row.id, ...row }));
+  return data ?? [];
 }
 
 export async function getGameTotals(

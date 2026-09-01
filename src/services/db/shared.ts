@@ -1,5 +1,14 @@
+import type { Json, TablesUpdate } from "../../lib/database.types";
 import { supabase } from "../../lib/supabase";
 import { newUuid } from "../../lib/ids";
+
+/**
+ * This layer builds card / passive-effect / lobby-player arrays as
+ * `Record<string, unknown>[]` and stores them in `jsonb` columns. `asJson`
+ * narrows them to `Json` at the write boundary — the generated row types still
+ * check every other column name.
+ */
+export const asJson = (v: unknown): Json => v as Json;
 
 /** Lobby statuses that still accept a join-by-code. */
 export const ALL_STATUSES_OPEN = ["waiting", "active"];
@@ -199,9 +208,9 @@ export async function mutatePlayerCards<T = void>(
 
     const payload = {
       ...planned.extra,
-      cards: planned.cards,
+      cards: asJson(planned.cards),
       updated_at: nowIso(),
-    };
+    } as TablesUpdate<"player_cards">;
     const lastAttempt = attempt >= retries;
 
     let write = supabase.from("player_cards").update(payload).eq("id", pcId);
@@ -235,7 +244,7 @@ export async function addGameEvent(input: {
     player_id: input.playerId,
     player_name: input.playerName,
     event_type: input.eventType,
-    event_data: input.eventData,
+    event_data: asJson(input.eventData),
     timestamp: nowIso(),
   });
   if (error) {

@@ -4,6 +4,7 @@ import * as cardRepo from "./cardRepo";
 import {
   addGameEvent,
   applyPointDeltas,
+  asJson,
   initialPlayerPoints,
   nowIso,
   subscribeTable,
@@ -269,7 +270,7 @@ export async function resolvePassiveEffect(
   await supabase
     .from("global_effects")
     .update({
-      passive_effects: passiveEffects,
+      passive_effects: asJson(passiveEffects),
       updated_at: nowIso(),
     })
     .eq("game_id", gameId);

@@ -1,6 +1,7 @@
 dist/
 dist-*/
 design/
+src/lib/database.types.ts
 .expo/
 node_modules/
 package-lock.json

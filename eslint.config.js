@@ -12,6 +12,7 @@ module.exports = [
       ".expo/**",
       "node_modules/**",
       "expo-env.d.ts",
+      "src/lib/database.types.ts",
     ],
   },
   ...expo,

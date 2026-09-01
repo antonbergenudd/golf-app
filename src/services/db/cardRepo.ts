@@ -12,6 +12,7 @@ import * as verificationRepo from "./verificationRepo";
 import {
   addGameEvent,
   applyPointDeltas,
+  asJson,
   mutatePlayerCards,
   nowIso,
   playerCardsId,
@@ -102,7 +103,7 @@ export async function distributePlayerCards(
       id: pcId,
       game_id: gameId,
       player_id: playerId,
-      cards: playerCardsJson,
+      cards: asJson(playerCardsJson),
       hole: currentHole,
       challenge_rerolls_used: 0,
       action_rerolls_used: 0,
@@ -122,7 +123,7 @@ export async function distributePlayerCards(
   await supabase
     .from("global_effects")
     .update({
-      passive_effects: passiveEffectsAccum,
+      passive_effects: asJson(passiveEffectsAccum),
       hole: currentHole,
       updated_at: nowIso(),
     })
@@ -470,7 +471,7 @@ export async function rerollPlayerChallenges(
   ];
   await supabase.from("global_effects").upsert({
     game_id: gameId,
-    passive_effects: passive,
+    passive_effects: asJson(passive),
     hole: currentHole,
     updated_at: nowIso(),
   });
@@ -815,7 +816,7 @@ export async function resolveActionStealCopiesForPlayedAction(input: {
     cards.push(copied);
     await supabase
       .from("player_cards")
-      .update({ cards, updated_at: nowIso() })
+      .update({ cards: asJson(cards), updated_at: nowIso() })
       .eq("id", pcId);
   }
 

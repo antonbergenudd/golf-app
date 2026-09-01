@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
+import type { Database } from "./database.types";
+
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -17,7 +19,7 @@ if (__DEV__ && !supabaseConfigured) {
 // network error, which `formatDatabaseError` turns into a "check your .env"
 // message. Guard user-facing entry points with `supabaseConfigured` for a
 // cleaner message.
-export const supabase = createClient(
+export const supabase = createClient<Database>(
   url || "http://localhost:54321",
   anonKey || "public-anon-key",
 );

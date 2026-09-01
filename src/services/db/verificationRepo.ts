@@ -1,10 +1,12 @@
 import { isChallengeCardType } from "../../models/card";
+import type { TablesInsert } from "../../lib/database.types";
 import { supabase } from "../../lib/supabase";
 import { newUuid } from "../../lib/ids";
 import * as cardRepo from "./cardRepo";
 import {
   addGameEvent,
   applyPointDeltas,
+  asJson,
   channelTopic,
   isChallengeVerificationDeputyColumnError,
   nowIso,
@@ -174,7 +176,7 @@ export async function requestChallengeVerification(input: {
 
   let { error: cvInsertError } = await supabase
     .from("challenge_verifications")
-    .insert(insertPayload);
+    .insert(insertPayload as TablesInsert<"challenge_verifications">);
 
   if (
     cvInsertError &&
@@ -183,7 +185,7 @@ export async function requestChallengeVerification(input: {
   ) {
     const r2 = await supabase
       .from("challenge_verifications")
-      .insert({ ...insertBase });
+      .insert({ ...insertBase } as TablesInsert<"challenge_verifications">);
     cvInsertError = r2.error;
   }
 
@@ -201,7 +203,7 @@ export async function requestChallengeVerification(input: {
   };
   const { error: pcUpdateError } = await supabase
     .from("player_cards")
-    .update({ cards, updated_at: nowIso() })
+    .update({ cards: asJson(cards), updated_at: nowIso() })
     .eq("id", pcId);
   if (pcUpdateError) {
     throw new Error(
@@ -348,7 +350,7 @@ async function applyChallengeVerificationOutcome(input: {
 
   await supabase
     .from("player_cards")
-    .update({ cards, updated_at: nowIso() })
+    .update({ cards: asJson(cards), updated_at: nowIso() })
     .eq("id", pcId);
 
   if (succeeded) {
