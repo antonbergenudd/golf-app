@@ -1,3 +1,11 @@
+/* eslint-disable import/first -- jest.mock must precede the import it stubs */
+// Pure-logic test — stub the client so importing ./shared doesn't spin up a
+// real Supabase/Realtime client (which needs native WebSocket on Node < 22).
+jest.mock("../../lib/supabase", () => ({
+  supabase: {},
+  supabaseConfigured: false,
+}));
+
 import { applyDeltasToPoints } from "./shared";
 
 describe("applyDeltasToPoints", () => {
