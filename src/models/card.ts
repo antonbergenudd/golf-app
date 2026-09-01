@@ -20,3 +20,10 @@ export function isAttackActionCard(card: Record<string, unknown>): boolean {
 export function isChallengeCardType(type: string | undefined | null): boolean {
   return type === "challenge" || type === "passive";
 }
+
+/** Action cards in the bag (market buy / hole rollover), not yet played from inventory. */
+export function isInventoryActionCard(c: Record<string, unknown>): boolean {
+  if (c.type !== "action") return false;
+  if (c.inventoryUsed === true) return false;
+  return c.banked === true || c.pendingBank === true;
+}

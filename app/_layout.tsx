@@ -1,3 +1,4 @@
+import "./nativewind-setup";
 import "../global.css";
 
 import {

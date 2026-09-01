@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -23,6 +22,8 @@ import {
   loadSavedPlayerName,
 } from "@/services/gameSession";
 import { Font } from "@/theme/fonts";
+import { alertWeb } from "@/utils/blurForModalWeb";
+import { formatDatabaseError } from "@/utils/formatDatabaseError";
 
 export default function JoinLobbyScreen() {
   const [code, setCode] = useState("");
@@ -39,11 +40,11 @@ export default function JoinLobbyScreen() {
     const c = code.trim().toUpperCase();
     const pn = playerName.trim();
     if (c.length !== 6) {
-      Alert.alert("Code", "Please enter a valid 6-character code.");
+      alertWeb("Code", "Please enter a valid 6-character code.");
       return;
     }
     if (!pn) {
-      Alert.alert("Name", "Please enter your name.");
+      alertWeb("Name", "Please enter your name.");
       return;
     }
     setLoading(true);
@@ -61,7 +62,7 @@ export default function JoinLobbyScreen() {
 
       const ok = await databaseService.joinLobby(c, playerId, pn);
       if (!ok) {
-        Alert.alert(
+        alertWeb(
           "Can't join",
           "Lobby full, invalid code, or game already started.",
         );
@@ -85,7 +86,7 @@ export default function JoinLobbyScreen() {
         params: { lobbyId: lobby.id, playerId, playerName: pn },
       });
     } catch (e) {
-      Alert.alert("Error", String(e));
+      alertWeb("Could not join", formatDatabaseError(e));
     } finally {
       setLoading(false);
     }

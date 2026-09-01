@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -18,10 +17,12 @@ import { AppButton } from "@/components/ui/AppButton";
 import { Font } from "@/theme/fonts";
 import { databaseService } from "@/services/databaseService";
 import { saveGameSession, savePlayerName, loadSavedPlayerName } from "@/services/gameSession";
+import { alertWeb } from "@/utils/blurForModalWeb";
+import { formatDatabaseError } from "@/utils/formatDatabaseError";
 
 export default function CreateLobbyScreen() {
   const today = new Date();
-  const defaultName = `Golf Game ${today.getDate()}/${today.getMonth() + 1}`;
+  const defaultName = `Fairway Chaos ${today.getDate()}/${today.getMonth() + 1}`;
   const [lobbyName, setLobbyName] = useState(defaultName);
   const [playerName, setPlayerName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,11 +37,11 @@ export default function CreateLobbyScreen() {
     const ln = lobbyName.trim();
     const pn = playerName.trim();
     if (!ln) {
-      Alert.alert("Missing", "Please enter a game name.");
+      alertWeb("Missing", "Please enter a game name.");
       return;
     }
     if (!pn) {
-      Alert.alert("Missing", "Please enter your name.");
+      alertWeb("Missing", "Please enter your name.");
       return;
     }
     setLoading(true);
@@ -66,7 +67,7 @@ export default function CreateLobbyScreen() {
         params: { lobbyId, playerId, playerName: pn },
       });
     } catch (e) {
-      Alert.alert("Error", String(e));
+      alertWeb("Could not create lobby", formatDatabaseError(e));
     } finally {
       setLoading(false);
     }

@@ -27,7 +27,7 @@ import {
 /** Legacy `GolfColors.mist` @ 0.9 alpha — Fairway kicker */
 const mist = "rgba(184,212,191,0.9)";
 
-/** Legacy `_buildHero` “Golf Game” TextStyle + ShaderMask stops */
+/** Legacy `_buildHero` title TextStyle + ShaderMask stops */
 const HERO_TITLE_SIZE = 44;
 const HERO_TITLE_LINE_HEIGHT = HERO_TITLE_SIZE * 1.02;
 
@@ -115,8 +115,8 @@ export default function HomeScreen() {
           contentContainerStyle={styles.scrollContent}
           showsHorizontalScrollIndicator={false}
         >
-          <View className="flex-1 justify-center px-6">
-            <View className="mt-2 items-center">
+          <View style={styles.homeMainColumn}>
+            <View style={styles.heroStack}>
             <HeroEmblem />
             <View style={{ height: 28 }} />
             <Text style={styles.heroFairway}>Fairway</Text>
@@ -141,7 +141,7 @@ export default function HomeScreen() {
             </>
             )}
 
-            <View style={{ height: 40 }} />
+            <View style={{ height: 32 }} />
 
             <GameTile
             variant="host"
@@ -151,7 +151,7 @@ export default function HomeScreen() {
             onPress={() => router.push("/create")}
             />
 
-            <View style={{ height: 14 }} />
+            <View style={{ height: 10 }} />
 
             <GameTile
             variant="join"
@@ -172,7 +172,7 @@ export default function HomeScreen() {
 
 function HeroEmblem() {
   return (
-    <View className="items-center justify-center" style={{ width: 124, height: 124 }}>
+    <View style={[styles.heroEmblemOuter, { width: 124, height: 124 }]}>
       <View
         style={{
           position: "absolute",
@@ -247,7 +247,7 @@ function GradientTitle() {
             textAnchor="middle"
             alignmentBaseline="central"
           >
-            Golf Game
+            Chaos
           </SvgText>
         </G>
       </Svg>
@@ -273,31 +273,37 @@ function ResumeSessionCard({
   return (
     <Pressable
       onPress={resuming ? undefined : onResume}
-      android_ripple={{ color: "rgba(212,175,55,0.1)" }}
+      disabled={resuming}
+      android_ripple={{ color: "rgba(212,175,55,0.12)" }}
       style={({ pressed }) => [
-        styles.resumeCard,
-        pressed && !resuming ? { opacity: 0.92 } : null,
+        styles.resumeCardOuter,
+        pressed && !resuming ? styles.resumeCardOuterPressed : null,
       ]}
     >
-      <MaterialIcons name="replay" size={28} color="rgba(212,175,55,0.95)" />
-      <View className="ml-3 min-w-0 flex-1">
-        <Text style={styles.resumeTitle}>Resume your round</Text>
-        <View style={{ height: 4 }} />
-        <Text style={styles.resumeSubtitle}>{codeLine}</Text>
-      </View>
-      {resuming ? (
-        <View className="p-2">
-          <ActivityIndicator size="small" color="#D4AF37" />
+      <View style={styles.resumeCardSurface}>
+        <MaterialIcons name="replay" size={28} color="rgba(212,175,55,0.95)" />
+        <View style={styles.resumeTextCol}>
+          <Text style={styles.tileTitle}>Resume your round</Text>
+          <View style={{ height: 4 }} />
+          <Text style={styles.tileSubtitle}>{codeLine}</Text>
         </View>
-      ) : (
-        <Pressable
-          onPress={onDismiss}
-          hitSlop={12}
-          accessibilityLabel="Forget this round"
-        >
-          <MaterialIcons name="close" size={22} color="rgba(255,255,255,0.45)" />
-        </Pressable>
-      )}
+        {resuming ? (
+          <View style={styles.resumeSpinnerWrap}>
+            <ActivityIndicator size="small" color="#D4AF37" />
+          </View>
+        ) : (
+          <Pressable
+            onPress={(e) => {
+              e?.stopPropagation?.();
+              onDismiss();
+            }}
+            hitSlop={12}
+            accessibilityLabel="Forget this round"
+          >
+            <MaterialIcons name="close" size={22} color="rgba(255,255,255,0.45)" />
+          </Pressable>
+        )}
+      </View>
     </Pressable>
   );
 }
@@ -319,7 +325,7 @@ function GameTile({
   const [pressed, setPressed] = useState(false);
 
   const inner = (
-    <View className="flex-row items-center" style={styles.tileInner}>
+    <View style={styles.tileInner}>
       <View
         style={[
           styles.tileIconWrap,
@@ -336,22 +342,22 @@ function GameTile({
       >
         <MaterialIcons
           name={host ? "add" : "group-add"}
-          size={28}
+          size={24}
           color={host ? "#D4AF37" : "#7FA386"}
         />
       </View>
-      <View style={{ width: 16 }} />
-      <View className="min-w-0 flex-1">
+      <View style={{ width: 12 }} />
+      <View style={styles.tileTextCol}>
         <Text style={styles.tileTitle}>{title}</Text>
-        <View style={{ height: 6 }} />
+        <View style={{ height: 4 }} />
         <Text style={styles.tileSubtitle}>{subtitle}</Text>
-        <View style={{ height: 10 }} />
+        <View style={{ height: 6 }} />
         <Text style={styles.tileHint}>{hint}</Text>
       </View>
-      <View style={{ width: 6 }} />
+      <View style={{ width: 4 }} />
       <MaterialIcons
         name="arrow-forward"
-        size={22}
+        size={24}
         color={host ? "rgba(212,175,55,0.9)" : "rgba(255,255,255,0.35)"}
       />
     </View>
@@ -363,8 +369,8 @@ function GameTile({
         styles.tileShadow,
         host && {
           shadowColor: "#D4AF37",
-          shadowOpacity: pressed ? 0.06 : 0.16,
-          shadowRadius: 26,
+          shadowOpacity: pressed ? 0.06 : 0.14,
+          shadowRadius: 18,
           shadowOffset: { width: 0, height: 0 },
         },
       ]}
@@ -387,6 +393,7 @@ function GameTile({
             style={[
               styles.tileGrad,
               {
+                backgroundColor: "rgba(20,38,26,0.92)",
                 borderWidth: 1.35,
                 borderColor: "rgba(212,175,55,0.55)",
               },
@@ -442,37 +449,23 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     color: "rgba(107,152,114,0.85)",
   },
-  resumeTitle: {
+  tileTitle: {
     fontFamily: Font.bold,
     fontSize: 16,
     fontWeight: "normal",
-    letterSpacing: -0.2,
-    color: "#FFFFFF",
-  },
-  resumeSubtitle: {
-    fontFamily: Font.regular,
-    fontSize: 13,
-    lineHeight: 13 * 1.35,
-    fontWeight: "normal",
-    color: "rgba(255,255,255,0.72)",
-  },
-  tileTitle: {
-    fontFamily: Font.bold,
-    fontSize: 18,
-    fontWeight: "normal",
-    letterSpacing: -0.2,
+    letterSpacing: -0.15,
     color: "#FFFFFF",
   },
   tileSubtitle: {
     fontFamily: Font.regular,
-    fontSize: 13.5,
-    lineHeight: 13.5 * 1.4,
+    fontSize: 12.5,
+    lineHeight: 12.5 * 1.38,
     fontWeight: "normal",
     color: "rgba(255,255,255,0.72)",
   },
   tileHint: {
     fontFamily: Font.regular,
-    fontSize: 11,
+    fontSize: 10.5,
     fontStyle: "italic",
     fontWeight: "normal",
     color: "rgba(107,152,114,0.95)",
@@ -487,49 +480,82 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 24,
   },
-  resumeCard: {
+  homeMainColumn: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  heroStack: {
+    marginTop: 8,
+    alignItems: "center",
+  },
+  heroEmblemOuter: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  resumeTextCol: {
+    marginLeft: 12,
+    minWidth: 0,
+    flex: 1,
+  },
+  resumeSpinnerWrap: {
+    padding: 8,
+  },
+  resumeCardOuter: {
+    alignSelf: "stretch",
+  },
+  resumeCardOuterPressed: {
+    opacity: 0.92,
+  },
+  resumeCardSurface: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 22,
     borderWidth: 1.2,
     borderColor: "rgba(212,175,55,0.4)",
-    backgroundColor: "rgba(20,38,26,0.92)",
+    backgroundColor: "rgba(20,38,26,0.96)",
     paddingLeft: 16,
     paddingTop: 14,
     paddingBottom: 14,
     paddingRight: 10,
+    overflow: "hidden",
     shadowColor: "#D4AF37",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.14,
     shadowRadius: 20,
     elevation: 8,
   },
   tileShadow: {
-    borderRadius: 26,
+    borderRadius: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.35,
-    shadowRadius: 22,
-    elevation: 14,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+    elevation: 12,
   },
   pressAnim: {
-    borderRadius: 26,
+    borderRadius: 20,
     overflow: "hidden",
   },
   tileGrad: {
-    borderRadius: 26,
+    borderRadius: 20,
     overflow: "hidden",
   },
   tileInner: {
-    paddingLeft: 18,
-    paddingTop: 18,
-    paddingBottom: 18,
-    paddingRight: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingLeft: 14,
+    paddingTop: 13,
+    paddingBottom: 13,
+    paddingRight: 12,
+  },
+  tileTextCol: {
+    minWidth: 0,
+    flex: 1,
   },
   tileIconWrap: {
-    width: 54,
-    height: 54,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",

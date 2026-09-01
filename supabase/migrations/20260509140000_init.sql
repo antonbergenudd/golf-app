@@ -137,6 +137,15 @@ alter table public.game_events enable row level security;
 alter table public.players enable row level security;
 alter table public.scores enable row level security;
 
+drop policy if exists "games_anon_all" on public.games;
+drop policy if exists "lobbies_anon_all" on public.lobbies;
+drop policy if exists "player_cards_anon_all" on public.player_cards;
+drop policy if exists "global_effects_anon_all" on public.global_effects;
+drop policy if exists "challenge_verifications_anon_all" on public.challenge_verifications;
+drop policy if exists "game_events_anon_all" on public.game_events;
+drop policy if exists "players_anon_all" on public.players;
+drop policy if exists "scores_anon_all" on public.scores;
+
 create policy "games_anon_all" on public.games for all using (true) with check (true);
 create policy "lobbies_anon_all" on public.lobbies for all using (true) with check (true);
 create policy "player_cards_anon_all" on public.player_cards for all using (true) with check (true);
@@ -146,10 +155,45 @@ create policy "game_events_anon_all" on public.game_events for all using (true) 
 create policy "players_anon_all" on public.players for all using (true) with check (true);
 create policy "scores_anon_all" on public.scores for all using (true) with check (true);
 
--- Realtime (safe if tables already published)
-alter publication supabase_realtime add table public.lobbies;
-alter publication supabase_realtime add table public.games;
-alter publication supabase_realtime add table public.player_cards;
-alter publication supabase_realtime add table public.global_effects;
-alter publication supabase_realtime add table public.challenge_verifications;
-alter publication supabase_realtime add table public.game_events;
+-- Realtime (idempotent: skip if table already in publication)
+do $$
+begin
+  alter publication supabase_realtime add table public.lobbies;
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.games;
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.player_cards;
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.global_effects;
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.challenge_verifications;
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.game_events;
+exception
+  when duplicate_object then null;
+end $$;

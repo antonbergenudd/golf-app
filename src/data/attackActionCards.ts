@@ -164,4 +164,13 @@ export const ATTACK_ACTION_CARDS: GameCard[] = [
     points: 2,
     actionCategory: "attack",
   },
+  {
+    id: "action_041",
+    title: "Trial by combat",
+    description:
+      "Let another player perform your challenge. If they succeed you both get the challenge points; if they fail you lose 1 point.",
+    type: "action",
+    points: 4,
+    actionCategory: "attack",
+  },
 ];

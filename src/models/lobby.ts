@@ -21,6 +21,8 @@ export type Lobby = {
   gameId?: string | null;
   plannedHoles: number;
   plannedMode: GameMode;
+  /** Points each player begins with when the game starts (0–10). */
+  startingPoints: number;
 };
 
 function parseJoinedAt(raw: unknown): string {
@@ -44,6 +46,7 @@ export function lobbyFromRow(id: string, row: Record<string, unknown>): Lobby {
     : [];
 
   const planned = Number(row.planned_holes ?? row.plannedHoles ?? 18);
+  const startPts = Number(row.starting_points ?? row.startingPoints ?? 1);
 
   return {
     id,
@@ -57,8 +60,9 @@ export function lobbyFromRow(id: string, row: Record<string, unknown>): Lobby {
     createdAt: String(row.created_at ?? row.createdAt ?? new Date().toISOString()),
     updatedAt: row.updated_at != null ? String(row.updated_at) : undefined,
     gameId: row.game_id != null ? String(row.game_id) : (row.gameId as string | null) ?? null,
-    plannedHoles: Math.min(36, Math.max(1, planned)),
+    plannedHoles: Math.max(1, planned),
     plannedMode: parseGameMode(row.planned_mode ?? row.plannedMode),
+    startingPoints: Math.min(10, Math.max(0, Number.isFinite(startPts) ? startPts : 1)),
   };
 }
 
@@ -82,6 +86,7 @@ export function lobbyToInsert(lobby: Omit<Lobby, "id">): Record<string, unknown>
     max_players: lobby.maxPlayers,
     planned_holes: lobby.plannedHoles,
     planned_mode: gameModeValue(lobby.plannedMode),
+    starting_points: lobby.startingPoints,
     created_at: lobby.createdAt,
     updated_at: lobby.updatedAt ?? new Date().toISOString(),
     ...(lobby.gameId ? { game_id: lobby.gameId } : {}),

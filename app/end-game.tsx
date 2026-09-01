@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
@@ -6,11 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { GolfChrome } from "@/components/fairway/GolfChrome";
 import { AppButton } from "@/components/ui/AppButton";
-import {
-  gameCurrencyLabel,
-  gameModeName,
-  parseGameMode,
-} from "@/models/gameMode";
+import { gameModeName, parseGameMode } from "@/models/gameMode";
 import { databaseService } from "@/services/databaseService";
 import { clearGameSession } from "@/services/gameSession";
 
@@ -40,14 +35,51 @@ export default function EndGameScreen() {
   }, [p.namesJson]);
 
   const [gameRow, setGameRow] = useState<Record<string, unknown> | null>(null);
+  const [strokeTotals, setStrokeTotals] = useState<Record<string, number>>({});
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    return databaseService.subscribeGame(gameId, setGameRow);
+    let cancelled = false;
+    setLoadError(null);
+    setGameRow(null);
+    setStrokeTotals({});
+    void (async () => {
+      try {
+        const [row, totals] = await Promise.all([
+          databaseService.fetchGameById(gameId),
+          databaseService.getGameTotals(gameId),
+        ]);
+        if (!cancelled) {
+          setGameRow(row);
+          setStrokeTotals(totals);
+        }
+      } catch (e) {
+        if (!cancelled) setLoadError(String(e));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [gameId]);
 
-  async function playAgain() {
+  async function goToHome() {
     await clearGameSession();
     router.replace("/");
+  }
+
+  async function startNewRound() {
+    await clearGameSession();
+    router.replace("/create");
+  }
+
+  if (loadError !== null) {
+    return (
+      <GolfChrome>
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="font-sans text-center text-[#FF5252]">{loadError}</Text>
+        </View>
+      </GolfChrome>
+    );
   }
 
   if (!gameRow) {
@@ -61,13 +93,23 @@ export default function EndGameScreen() {
   }
 
   const mode = parseGameMode(gameRow.mode);
-  const rawPoints = (gameRow.player_points as Record<string, number>) ?? {};
   const entries = Object.entries(nameMap).map(([id, name]) => ({
     id,
     name,
-    points: rawPoints[id] ?? 0,
+    totalStrokes: strokeTotals[id],
   }));
-  entries.sort((a, b) => b.points - a.points);
+  entries.sort((a, b) => {
+    const sa =
+      a.totalStrokes != null && Number.isFinite(a.totalStrokes)
+        ? a.totalStrokes
+        : Number.POSITIVE_INFINITY;
+    const sb =
+      b.totalStrokes != null && Number.isFinite(b.totalStrokes)
+        ? b.totalStrokes
+        : Number.POSITIVE_INFINITY;
+    if (sa !== sb) return sa - sb;
+    return a.name.localeCompare(b.name);
+  });
 
   return (
     <GolfChrome>
@@ -80,7 +122,7 @@ export default function EndGameScreen() {
             {lobbyName}
           </Text>
           <Text className="font-sans mb-10 text-center text-sm text-[#9AB79F]">
-            Final balance in {gameCurrencyLabel(mode, { short: true })}
+            Total strokes — lowest wins
           </Text>
 
           {entries.map((row, index) => (
@@ -92,12 +134,28 @@ export default function EndGameScreen() {
                 #{index + 1} {row.name}
                 {row.id === currentPlayerId ? " (you)" : ""}
               </Text>
-              <Text className="font-sans text-lg font-black text-[#D4AF37]">{row.points}</Text>
+              <View className="items-end">
+                <Text className="font-sans text-lg font-black text-[#D4AF37]">
+                  {row.totalStrokes != null && Number.isFinite(row.totalStrokes)
+                    ? row.totalStrokes
+                    : "—"}
+                </Text>
+                <Text className="font-sans text-[10px] uppercase tracking-wider text-[#6B9872]">
+                  strokes
+                </Text>
+              </View>
             </View>
           ))}
 
           <View className="mt-10">
-            <AppButton label="Play again" onPress={playAgain} />
+            <AppButton label="Go to home" onPress={goToHome} />
+            <View className="mt-3">
+              <AppButton
+                label="Start a new round"
+                variant="muted"
+                onPress={startNewRound}
+              />
+            </View>
           </View>
         </ScrollView>
       </SafeAreaView>

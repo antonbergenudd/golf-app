@@ -2,10 +2,12 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Modal,
   Platform,
   Pressable,
@@ -22,12 +24,17 @@ import {
 } from "react-native-safe-area-context";
 
 import { GolfChrome } from "@/components/fairway/GolfChrome";
+import { LobbyFooterButton } from "@/components/fairway/LobbyFooterButton";
 import { Font } from "@/theme/fonts";
 import type { GameMode } from "@/models/gameMode";
 import { gameModeName } from "@/models/gameMode";
-import type { Lobby } from "@/models/lobby";
+import type { Lobby, LobbyPlayer } from "@/models/lobby";
 import { lobbyHelpers } from "@/models/lobby";
 import { databaseService } from "@/services/databaseService";
+import {
+  blurActiveElementForModalWeb,
+  blurIfFocusInsideAriaHiddenAncestorsWeb,
+} from "@/utils/blurForModalWeb";
 import { saveGameSession, clearGameSession } from "@/services/gameSession";
 
 /** Matches legacy `lobby_room.dart` `_playerColors`. */
@@ -69,15 +76,76 @@ export default function LobbyRoomScreen() {
   const [lobby, setLobby] = useState<Lobby | null>(null);
   const [holes, setHoles] = useState(18);
   const [mode, setMode] = useState<GameMode>("classic");
+  const [startingPoints, setStartingPoints] = useState(1);
   const [qrOpen, setQrOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [starting, setStarting] = useState(false);
   const navigatedRef = useRef(false);
+  const wasEverInLobbyRef = useRef(false);
 
   /** Draft state for Edit Game Settings modal */
   const [draftHoles, setDraftHoles] = useState(18);
   const [draftMode, setDraftMode] = useState<GameMode>("classic");
+  const [draftStartingPoints, setDraftStartingPoints] = useState(1);
   const [draftCustom, setDraftCustom] = useState("");
+
+  const copySnackbarOpacity = useRef(new Animated.Value(0)).current;
+  const copySnackbarTranslate = useRef(new Animated.Value(12)).current;
+  const copySnackbarHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  const showCopySnackbar = useCallback(() => {
+    if (copySnackbarHideTimerRef.current) {
+      clearTimeout(copySnackbarHideTimerRef.current);
+      copySnackbarHideTimerRef.current = null;
+    }
+    copySnackbarOpacity.stopAnimation();
+    copySnackbarTranslate.stopAnimation();
+    copySnackbarOpacity.setValue(0);
+    copySnackbarTranslate.setValue(12);
+    Animated.parallel([
+      Animated.timing(copySnackbarOpacity, {
+        toValue: 1,
+        duration: 160,
+        useNativeDriver: true,
+      }),
+      Animated.timing(copySnackbarTranslate, {
+        toValue: 0,
+        duration: 160,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    copySnackbarHideTimerRef.current = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(copySnackbarOpacity, {
+          toValue: 0,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+        Animated.timing(copySnackbarTranslate, {
+          toValue: 12,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+      ]).start();
+      copySnackbarHideTimerRef.current = null;
+    }, 2400);
+  }, [copySnackbarOpacity, copySnackbarTranslate]);
+
+  useEffect(() => {
+    return () => {
+      if (copySnackbarHideTimerRef.current) {
+        clearTimeout(copySnackbarHideTimerRef.current);
+      }
+    };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      blurIfFocusInsideAriaHiddenAncestorsWeb();
+    }, []),
+  );
 
   useEffect(() => {
     const unsub = databaseService.subscribeLobby(lobbyId, (l) => {
@@ -85,6 +153,7 @@ export default function LobbyRoomScreen() {
       if (l) {
         setHoles(l.plannedHoles);
         setMode(l.plannedMode);
+        setStartingPoints(l.startingPoints);
         void saveGameSession({
           lobbyId: l.id,
           lobbyCode: l.code,
@@ -97,12 +166,39 @@ export default function LobbyRoomScreen() {
     return unsub;
   }, [lobbyId, playerId, playerName]);
 
+  useEffect(() => {
+    if (!lobby || lobby.status === "closed") return;
+    if (lobbyHelpers.isPlayerInLobby(lobby, playerId)) {
+      wasEverInLobbyRef.current = true;
+      return;
+    }
+    if (!wasEverInLobbyRef.current || navigatedRef.current) return;
+    void clearGameSession();
+    const msg = "The host removed you from this lobby.";
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined") window.alert(msg);
+      blurActiveElementForModalWeb();
+      router.replace("/");
+      return;
+    }
+    Alert.alert("Removed from lobby", msg, [
+      {
+        text: "OK",
+        onPress: () => {
+          blurActiveElementForModalWeb();
+          router.replace("/");
+        },
+      },
+    ]);
+  }, [lobby, playerId]);
+
   const isHost = lobby?.hostId === playerId;
 
   useEffect(() => {
     if (!lobby || navigatedRef.current) return;
     if (lobby.status === "active" && lobby.gameId && !isHost) {
       navigatedRef.current = true;
+      blurActiveElementForModalWeb();
       router.replace({
         pathname: "/game/[gameId]",
         params: {
@@ -131,6 +227,7 @@ export default function LobbyRoomScreen() {
           await databaseService.leaveLobby(lobbyId, playerId);
         }
         await clearGameSession();
+        blurActiveElementForModalWeb();
         router.replace("/");
       } catch (e) {
         Alert.alert("Error", String(e));
@@ -156,6 +253,45 @@ export default function LobbyRoomScreen() {
     ]);
   }, [isHost, lobbyId, playerId]);
 
+  const confirmKickPlayer = useCallback(
+    (target: LobbyPlayer) => {
+      if (!isHost || target.id === playerId) return;
+      const title = "Remove player?";
+      const message = `${target.name} will be removed from the lobby.`;
+
+      async function performKick() {
+        try {
+          await databaseService.kickPlayerFromLobby(lobbyId, playerId, target.id);
+        } catch (e) {
+          Alert.alert("Could not remove player", String(e));
+        }
+      }
+
+      if (Platform.OS === "web") {
+        const ok =
+          typeof window !== "undefined" &&
+          window.confirm(`${title}\n\n${message}`);
+        if (ok) void performKick();
+        return;
+      }
+
+      Alert.alert(title, message, [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => void performKick(),
+        },
+      ]);
+    },
+    [isHost, lobbyId, playerId],
+  );
+
+  function openQrModal() {
+    blurActiveElementForModalWeb();
+    setQrOpen(true);
+  }
+
   function openSettingsModal() {
     if (!lobby) return;
     if (!isHost) {
@@ -165,27 +301,36 @@ export default function LobbyRoomScreen() {
     const h = lobby.plannedHoles;
     setDraftHoles(h);
     setDraftMode(lobby.plannedMode);
+    setDraftStartingPoints(lobby.startingPoints);
     setDraftCustom(String(h));
+    blurActiveElementForModalWeb();
     setSettingsOpen(true);
   }
 
+  const closeSettingsModal = useCallback(() => {
+    setSettingsOpen(false);
+  }, []);
+
   async function saveSettingsModal() {
-    const parsed = parseInt(draftCustom.trim(), 10);
+    const trimmed = draftCustom.trim();
     let chosen = draftHoles;
-    if (!Number.isNaN(parsed)) {
-      if (parsed < 1 || parsed > 36) {
-        Alert.alert("Invalid", "Holes must be between 1 and 36.");
+    if (trimmed !== "") {
+      const parsed = parseInt(trimmed, 10);
+      if (Number.isNaN(parsed) || parsed < 1) {
+        Alert.alert("Invalid", "Enter a positive whole number of holes.");
         return;
       }
       chosen = parsed;
     }
-    chosen = Math.min(36, Math.max(1, chosen));
+    chosen = Math.max(1, Math.floor(chosen));
+    const startPts = Math.min(10, Math.max(0, Math.floor(draftStartingPoints)));
     try {
       await databaseService.updateLobbyPlannedSettings(lobbyId, {
         holes: chosen,
         mode: draftMode,
+        startingPoints: startPts,
       });
-      setSettingsOpen(false);
+      closeSettingsModal();
     } catch (e) {
       Alert.alert("Could not save", String(e));
     }
@@ -198,6 +343,7 @@ export default function LobbyRoomScreen() {
       await databaseService.updateLobbyPlannedSettings(lobbyId, {
         holes,
         mode,
+        startingPoints,
       });
       const gameId = await databaseService.startGameFromLobby(lobbyId);
       navigatedRef.current = true;
@@ -208,6 +354,7 @@ export default function LobbyRoomScreen() {
         playerName,
         gameId,
       });
+      blurActiveElementForModalWeb();
       router.replace({
         pathname: "/game/[gameId]",
         params: {
@@ -229,9 +376,7 @@ export default function LobbyRoomScreen() {
   async function copyCode() {
     if (!lobby?.code) return;
     await Clipboard.setStringAsync(lobby.code);
-    if (Platform.OS !== "web") {
-      Alert.alert("", "Code copied to clipboard");
-    }
+    showCopySnackbar();
   }
 
   const title = lobby?.name ?? "Lobby";
@@ -239,7 +384,7 @@ export default function LobbyRoomScreen() {
   const appBarSubtitle = !lobby
     ? "Loading…"
     : lobbyHelpers.isWaiting(lobby)
-      ? `${gameModeName(mode)} · ${holes} holes · Waiting`
+      ? `${gameModeName(mode)} · ${holes} holes · ${startingPoints} gold`
       : lobby.status === "active"
         ? "Game in progress"
         : lobby.status === "completed"
@@ -258,14 +403,17 @@ export default function LobbyRoomScreen() {
 
     if (lobby.status === "closed") {
       void clearGameSession();
+      blurActiveElementForModalWeb();
       router.replace("/");
       return null;
     }
 
-    const modeLabel = gameModeName(mode);
-    const modeDetails = mode === "beer_run" ? "Track sips" : "Track points";
     const players = lobby.players;
     const maxPlayers = lobby.maxPlayers;
+    const canShowStart =
+      isHost &&
+      players.length >= 1 &&
+      lobbyHelpers.isWaiting(lobby);
 
     return (
       <View style={styles.bodyColumn}>
@@ -275,6 +423,25 @@ export default function LobbyRoomScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          {/* Centered title */}
+          <View style={styles.lobbyHeaderSection}>
+            <View style={styles.lobbyHeaderTitleBlock}>
+              <View style={styles.lobbyHeaderTitleRow}>
+                <MaterialIcons
+                  name="sports-golf"
+                  size={18}
+                  color={GolfColors.gold}
+                />
+                <Text style={styles.lobbyHeaderTitle} numberOfLines={1}>
+                  {title}
+                </Text>
+              </View>
+              <Text style={styles.lobbyHeaderSubtitle} numberOfLines={2}>
+                {appBarSubtitle}
+              </Text>
+            </View>
+          </View>
+
           {/* Lobby code card */}
           <LinearGradient
             colors={["rgba(212,175,55,0.1)", "rgba(15,26,18,0.94)"]}
@@ -282,66 +449,51 @@ export default function LobbyRoomScreen() {
             end={{ x: 1, y: 1 }}
             style={styles.codeCard}
           >
-            <View style={styles.codeRow}>
-              <View style={styles.codeLeft}>
-                <Text style={styles.codeKicker}>Lobby code</Text>
-                <Text style={styles.codeDigits}>{lobby.code}</Text>
-                <Text style={styles.codeHostLine}>
-                  {isHost
-                    ? "You are the host"
-                    : `Host: ${lobby.hostName ?? ""}`}
-                </Text>
-              </View>
-              <View style={styles.codeRightCol}>
-                <View style={styles.countPill}>
-                  <Text style={styles.countPillText}>
-                    {players.length} / {maxPlayers}
+            <View style={styles.codeCardBody}>
+              <View style={styles.codeTopRow}>
+                <View style={styles.codeLeft}>
+                  <Text style={styles.codeKicker}>Lobby code</Text>
+                  <Text selectable style={styles.codeDigits}>
+                    {lobby.code}
+                  </Text>
+                  <Text style={styles.codeHostLine}>
+                    {isHost
+                      ? "You are the host"
+                      : `Host: ${lobby.hostName ?? ""}`}
                   </Text>
                 </View>
+                <View style={styles.countPillSlot}>
+                  <View style={styles.countPill}>
+                    <Text style={styles.countPillText} numberOfLines={1}>
+                      {players.length} / {maxPlayers}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.codeActionsRow}>
                 <Pressable onPress={copyCode} style={styles.iconTile}>
                   <MaterialIcons name="content-copy" size={18} color={GolfColors.gold} />
                 </Pressable>
-                <Pressable onPress={() => setQrOpen(true)} style={styles.iconTile}>
+                <Pressable onPress={openQrModal} style={styles.iconTile}>
                   <MaterialIcons name="qr-code" size={18} color={GolfColors.gold} />
                 </Pressable>
+                {isHost ? (
+                  <Pressable
+                    onPress={() => openSettingsModal()}
+                    style={[styles.iconTile, styles.iconTileHostTrailing]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Game settings"
+                  >
+                    <MaterialIcons
+                      name="settings"
+                      size={18}
+                      color={GolfColors.gold}
+                    />
+                  </Pressable>
+                ) : null}
               </View>
             </View>
           </LinearGradient>
-
-          {/* Game settings card */}
-          <View style={styles.card}>
-            <View style={styles.settingsHeader}>
-              <MaterialIcons name="tune" size={18} color={GolfColors.sage} />
-              <Text style={styles.settingsKicker}>Game settings</Text>
-              <View style={{ flex: 1 }} />
-              {isHost ? (
-                <Pressable onPress={openSettingsModal} hitSlop={8}>
-                  <View style={styles.editBtn}>
-                    <MaterialIcons name="edit" size={16} color={GolfColors.gold} />
-                    <Text style={styles.editBtnLabel}> Edit</Text>
-                  </View>
-                </Pressable>
-              ) : (
-                <Text style={styles.hostHint}>Host can change</Text>
-              )}
-            </View>
-            <View style={{ height: 12 }} />
-            <View style={styles.settingTilesRow}>
-              <SettingTile
-                icon="flag"
-                label="Holes"
-                value={String(holes)}
-                subtitle="Round length"
-              />
-              <View style={{ width: 10 }} />
-              <SettingTile
-                icon={mode === "beer_run" ? "local-bar" : "sports-golf"}
-                label="Mode"
-                value={modeLabel}
-                subtitle={modeDetails}
-              />
-            </View>
-          </View>
 
           {/* Players card */}
           <View style={[styles.card, { paddingHorizontal: 0, paddingVertical: 0 }]}>
@@ -364,7 +516,14 @@ export default function LobbyRoomScreen() {
                   <PlayerRow
                     player={players[index]!}
                     index={index}
-                    playerId={playerId}
+                    viewerPlayerId={playerId}
+                    showKick={
+                      isHost &&
+                      lobbyHelpers.isWaiting(lobby) &&
+                      !players[index]!.isHost &&
+                      players[index]!.id !== lobby.hostId
+                    }
+                    onKick={() => confirmKickPlayer(players[index]!)}
                   />
                 )}
               </View>
@@ -372,30 +531,29 @@ export default function LobbyRoomScreen() {
           </View>
         </ScrollView>
 
-        {/* Bottom bar — keep above ScrollView so touches aren’t stolen (RN flex + scroll quirk). */}
         <View
           style={[
-            styles.bottomBar,
-            styles.bottomBarElevated,
-            Platform.OS === "web"
-              ? { paddingBottom: 12 + insets.bottom }
-              : null,
+            styles.lobbyBottomActions,
+            { paddingBottom: Math.max(28, insets.bottom + 12) },
           ]}
         >
-          {isHost && players.length >= 1 && lobbyHelpers.isWaiting(lobby) ? (
-            <>
-              <LobbyPrimaryOutlineButton
-                label={players.length === 1 ? "Play solo" : "Start game"}
-                icon="play-arrow"
-                loading={starting}
-                onPress={startGame}
-              />
-              <View style={{ height: 10 }} />
-            </>
+          {canShowStart ? (
+            <LobbyFooterButton
+              variant="primary"
+              label={players.length === 1 ? "Play solo" : "Start game"}
+              showPlayIcon
+              loading={starting}
+              onPress={() => void startGame()}
+              accessibilityLabel={
+                players.length === 1 ? "Play solo" : "Start game"
+              }
+            />
           ) : null}
-          <LobbyDangerOutlineButton
+          <LobbyFooterButton
+            variant="danger"
             label={isHost ? "Close lobby" : "Leave lobby"}
             onPress={leave}
+            accessibilityLabel={isHost ? "Close lobby" : "Leave lobby"}
           />
         </View>
       </View>
@@ -405,33 +563,36 @@ export default function LobbyRoomScreen() {
   return (
     <GolfChrome>
       <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-        {/* App bar — matches `buildGolfAppBar` gradient + title styles */}
-        <View style={styles.appBarWrap}>
-          <LinearGradient
-            colors={["#153220", "#0B1A0E", "#071209"]}
-            locations={[0, 0.55, 1]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={styles.appBarRow}>
-            <View style={styles.appBarEdgeSpacer} />
-            <View style={styles.appBarTitleBlock}>
-              <Text style={styles.appBarTitle} numberOfLines={1}>
-                {title}
-              </Text>
-              <Text style={styles.appBarSubtitle} numberOfLines={1}>
-                {appBarSubtitle}
-              </Text>
-            </View>
-            <View style={styles.appBarEdgeSpacer} />
-          </View>
-        </View>
-
         {renderBody()}
 
+        <Animated.View
+          style={[
+            styles.copySnackbarWrap,
+            {
+              bottom: insets.bottom + 118,
+              opacity: copySnackbarOpacity,
+              transform: [{ translateY: copySnackbarTranslate }],
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <View style={styles.copySnackbar}>
+            <MaterialIcons
+              name="check-circle"
+              size={20}
+              color={GolfColors.gold}
+            />
+            <Text style={styles.copySnackbarText}>Code copied to clipboard</Text>
+          </View>
+        </Animated.View>
+
         {/* QR modal */}
-        <Modal visible={qrOpen} transparent animationType="fade">
+        <Modal
+          visible={qrOpen}
+          transparent
+          animationType="fade"
+          onShow={blurActiveElementForModalWeb}
+        >
           <Pressable style={styles.modalBackdrop} onPress={() => setQrOpen(false)}>
             <Pressable
               style={styles.qrSheet}
@@ -451,106 +612,150 @@ export default function LobbyRoomScreen() {
         </Modal>
 
         {/* Edit game settings — parity with Flutter `_showHostOptions` */}
-        <Modal visible={settingsOpen} transparent animationType="fade">
-          <Pressable style={styles.modalBackdrop} onPress={() => setSettingsOpen(false)}>
-            <Pressable style={styles.settingsSheet} onPress={(e) => e.stopPropagation()}>
+        <Modal
+          visible={settingsOpen}
+          transparent
+          animationType="fade"
+          onShow={blurActiveElementForModalWeb}
+        >
+          <View style={styles.modalSettingsRoot}>
+            <Pressable
+              style={[StyleSheet.absoluteFillObject, styles.modalBackdropDim]}
+              onPress={closeSettingsModal}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss game settings"
+            />
+            <View style={styles.modalSettingsFrame} pointerEvents="box-none">
+              <View style={styles.settingsSheet}>
               <Text style={styles.modalTitle}>Game Settings</Text>
-              <Text style={styles.modalKicker}>Number of holes</Text>
-              <View style={styles.holeWrap}>
-                {[6, 9, 12, 18].map((h) => (
-                  <Pressable
-                    key={h}
-                    onPress={() => {
-                      setDraftHoles(h);
-                      setDraftCustom(String(h));
+              <View style={styles.settingsModalBody}>
+                <View>
+                  <Text style={styles.modalKicker}>Number of holes</Text>
+                  <View style={styles.holeWrap}>
+                    {[6, 9, 12, 18, 36].map((h) => (
+                      <Pressable
+                        key={h}
+                        onPress={() => {
+                          setDraftHoles(h);
+                          setDraftCustom(String(h));
+                        }}
+                        style={[
+                          styles.holeChip,
+                          draftHoles === h ? styles.holeChipOn : styles.holeChipOff,
+                        ]}
+                      >
+                        <Text
+                          style={
+                            draftHoles === h ? styles.holeChipTextOn : styles.holeChipTextOff
+                          }
+                        >
+                          {h} holes
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  <Text style={[styles.modalKicker, { marginTop: 14 }]}>
+                    Custom
+                  </Text>
+                  <TextInput
+                    value={draftCustom}
+                    onChangeText={(t) => {
+                      setDraftCustom(t);
+                      const n = parseInt(t, 10);
+                      if (!Number.isNaN(n)) setDraftHoles(n);
                     }}
-                    style={[
-                      styles.holeChip,
-                      draftHoles === h ? styles.holeChipOn : styles.holeChipOff,
-                    ]}
-                  >
-                    <Text
-                      style={
-                        draftHoles === h ? styles.holeChipTextOn : styles.holeChipTextOff
-                      }
+                    keyboardType="number-pad"
+                    placeholder="e.g. 27"
+                    placeholderTextColor={`${GolfColors.sage}99`}
+                    style={styles.modalInput}
+                  />
+                </View>
+                <View style={{ marginTop: 20 }}>
+                  <Text style={styles.modalKicker}>Game mode</Text>
+                  <View style={styles.modeRow}>
+                    <Pressable
+                      onPress={() => setDraftMode("classic")}
+                      style={[
+                        styles.modeCard,
+                        draftMode === "classic" ? styles.modeCardOn : styles.modeCardOff,
+                      ]}
                     >
-                      {h} holes
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-              <Text style={[styles.modalKicker, { marginTop: 14 }]}>Custom (1–36)</Text>
-              <TextInput
-                value={draftCustom}
-                onChangeText={(t) => {
-                  setDraftCustom(t);
-                  const n = parseInt(t, 10);
-                  if (!Number.isNaN(n)) setDraftHoles(n);
-                }}
-                keyboardType="number-pad"
-                placeholder="e.g. 27"
-                placeholderTextColor={`${GolfColors.sage}99`}
-                style={styles.modalInput}
-              />
-              <Text style={[styles.modalKicker, { marginTop: 20 }]}>Game mode</Text>
-              <View style={styles.modeRow}>
-                <Pressable
-                  onPress={() => setDraftMode("classic")}
-                  style={[
-                    styles.modeCard,
-                    draftMode === "classic" ? styles.modeCardOn : styles.modeCardOff,
-                  ]}
-                >
-                  <Text
-                    style={
-                      draftMode === "classic"
-                        ? styles.modeCardTitleOn
-                        : styles.modeCardTitleOff
-                    }
-                  >
-                    Classic
+                      <Text
+                        style={
+                          draftMode === "classic"
+                            ? styles.modeCardTitleOn
+                            : styles.modeCardTitleOff
+                        }
+                      >
+                        Classic
+                      </Text>
+                      <Text
+                        style={
+                          draftMode === "classic"
+                            ? styles.modeCardSubOn
+                            : styles.modeCardSubOff
+                        }
+                      >
+                        Track points
+                      </Text>
+                    </Pressable>
+                    <View style={{ width: 10 }} />
+                    <View
+                      style={[
+                        styles.modeCard,
+                        styles.modeCardOff,
+                        styles.modeCardBeerRunDisabled,
+                        draftMode === "beer_run"
+                          ? styles.modeCardBeerRunActiveOutline
+                          : null,
+                      ]}
+                      accessibilityState={{ disabled: true }}
+                    >
+                      <Text style={styles.modeCardTitleDisabled}>Beer Run</Text>
+                      <Text style={styles.modeCardSubDisabled}>
+                        To be implemented
+                      </Text>
+                      {draftMode === "beer_run" ? (
+                        <Text style={styles.modeCardBeerRunCurrentHint}>
+                          Currently selected for this lobby
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                </View>
+                <View style={{ marginTop: 20 }}>
+                  <Text style={styles.modalKicker}>
+                    Starting gold per player
                   </Text>
-                  <Text
-                    style={
-                      draftMode === "classic"
-                        ? styles.modeCardSubOn
-                        : styles.modeCardSubOff
-                    }
-                  >
-                    Track points
-                  </Text>
-                </Pressable>
-                <View style={{ width: 10 }} />
-                <Pressable
-                  onPress={() => setDraftMode("beer_run")}
-                  style={[
-                    styles.modeCard,
-                    draftMode === "beer_run" ? styles.modeCardOn : styles.modeCardOff,
-                  ]}
-                >
-                  <Text
-                    style={
-                      draftMode === "beer_run"
-                        ? styles.modeCardTitleOn
-                        : styles.modeCardTitleOff
-                    }
-                  >
-                    Beer Run
-                  </Text>
-                  <Text
-                    style={
-                      draftMode === "beer_run"
-                        ? styles.modeCardSubOn
-                        : styles.modeCardSubOff
-                    }
-                  >
-                    Track sips
-                  </Text>
-                </Pressable>
+                  <View style={styles.startGoldWrap}>
+                    {Array.from({ length: 11 }, (_, i) => i).map((n) => (
+                      <Pressable
+                        key={n}
+                        onPress={() => setDraftStartingPoints(n)}
+                        style={[
+                          styles.startGoldChip,
+                          draftStartingPoints === n
+                            ? styles.startGoldChipOn
+                            : styles.startGoldChipOff,
+                        ]}
+                      >
+                        <Text
+                          style={
+                            draftStartingPoints === n
+                              ? styles.startGoldChipTextOn
+                              : styles.startGoldChipTextOff
+                          }
+                        >
+                          {n}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
               </View>
               <View style={styles.modalActions}>
-                <Pressable onPress={() => setSettingsOpen(false)}>
-                  <Text style={styles.modalCancel}>Cancel</Text>
+                <Pressable onPress={closeSettingsModal}>
+                  <Text style={styles.modalClose}>Close</Text>
                 </Pressable>
                 <Pressable
                   onPress={saveSettingsModal}
@@ -559,48 +764,30 @@ export default function LobbyRoomScreen() {
                   <Text style={styles.modalSave}>Save</Text>
                 </Pressable>
               </View>
-            </Pressable>
-          </Pressable>
+              </View>
+            </View>
+          </View>
         </Modal>
       </SafeAreaView>
     </GolfChrome>
   );
 }
 
-function SettingTile({
-  icon,
-  label,
-  value,
-  subtitle,
-}: {
-  icon: keyof typeof MaterialIcons.glyphMap;
-  label: string;
-  value: string;
-  subtitle: string;
-}) {
-  return (
-    <View style={styles.settingTile}>
-      <View style={styles.settingTileHead}>
-        <MaterialIcons name={icon} size={14} color={GolfColors.sage} />
-        <Text style={styles.settingTileLabel}>{label}</Text>
-      </View>
-      <Text style={styles.settingTileValue}>{value}</Text>
-      <Text style={styles.settingTileSub}>{subtitle}</Text>
-    </View>
-  );
-}
-
 function PlayerRow({
   player,
   index,
-  playerId,
+  viewerPlayerId,
+  showKick,
+  onKick,
 }: {
   player: Lobby["players"][number];
   index: number;
-  playerId: string;
+  viewerPlayerId: string;
+  showKick?: boolean;
+  onKick?: () => void;
 }) {
   const ring = PLAYER_RING[index % PLAYER_RING.length];
-  const isMe = player.id === playerId;
+  const isMe = player.id === viewerPlayerId;
 
   return (
     <View style={styles.playerRow}>
@@ -635,6 +822,17 @@ function PlayerRow({
         </View>
         <Text style={styles.joinedSub}>Joined {formatJoinTime(player.joinedAt)}</Text>
       </View>
+      {showKick && onKick ? (
+        <Pressable
+          onPress={onKick}
+          hitSlop={10}
+          style={styles.playerKickButton}
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${player.name} from lobby`}
+        >
+          <MaterialIcons name="person-off" size={22} color="#F87171" />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -664,57 +862,6 @@ function Badge({
   );
 }
 
-function LobbyPrimaryOutlineButton({
-  label,
-  icon,
-  loading,
-  onPress,
-}: {
-  label: string;
-  icon: keyof typeof MaterialIcons.glyphMap;
-  loading?: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={loading ? undefined : onPress}
-      style={({ pressed }) => [
-        styles.primaryOutline,
-        pressed && !loading ? { transform: [{ scale: 0.97 }] } : null,
-      ]}
-    >
-      {loading ? (
-        <ActivityIndicator color={GolfColors.gold} />
-      ) : (
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <MaterialIcons name={icon} size={18} color={GolfColors.gold} />
-          <Text style={styles.primaryOutlineText}>{label}</Text>
-        </View>
-      )}
-    </Pressable>
-  );
-}
-
-function LobbyDangerOutlineButton({
-  label,
-  onPress,
-}: {
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.dangerOutline,
-        pressed ? { transform: [{ scale: 0.97 }] } : null,
-      ]}
-    >
-      <Text style={styles.dangerOutlineText}>{label}</Text>
-    </Pressable>
-  );
-}
-
 function formatJoinTime(joinedAt: string): string {
   const t = new Date(joinedAt).getTime();
   if (Number.isNaN(t)) return "";
@@ -728,46 +875,43 @@ function formatJoinTime(joinedAt: string): string {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  appBarWrap: {
-    overflow: "hidden",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(42,80,48,0.5)",
+  lobbyHeaderSection: {
+    paddingTop: 8,
+    paddingBottom: 12,
   },
-  appBarRow: {
-    flexDirection: "row",
+  lobbyHeaderTitleBlock: {
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    minHeight: 52,
-  },
-  appBarTitleBlock: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
     paddingHorizontal: 8,
   },
-  /** Empty rails so title + subtitle stay centered (no leading back control in lobby). */
-  appBarEdgeSpacer: {
-    width: 22,
+  lobbyHeaderTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
   },
-  appBarTitle: {
+  lobbyHeaderTitle: {
     fontFamily: Font.bold,
-    textAlign: "center",
     fontSize: 17,
     fontWeight: "normal",
     letterSpacing: -0.2,
     color: "#FFFFFF",
+    textAlign: "center",
+    maxWidth: "100%",
   },
-  /** Secondary line — parity with in-game header context (hole · mode). */
-  appBarSubtitle: {
+  lobbyHeaderSubtitle: {
     fontFamily: Font.regular,
     marginTop: 2,
     fontSize: 11,
     fontWeight: "normal",
     letterSpacing: 0.2,
     textAlign: "center",
-    color: `${GolfColors.sage}F0`,
+    color: "rgba(184,212,191,0.65)",
+  },
+  lobbyBottomActions: {
+    flexShrink: 0,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    gap: 10,
   },
   bodyColumn: {
     flex: 1,
@@ -780,7 +924,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: 0,
     paddingBottom: 16,
   },
   loadingWrap: {
@@ -803,18 +947,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 18,
     marginBottom: 16,
+    overflow: "hidden",
+    backgroundColor: "rgba(15,26,18,0.94)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.35,
     shadowRadius: 20,
     elevation: 10,
   },
-  codeRow: {
+  codeCardBody: {
+    width: "100%",
+  },
+  codeTopRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
+    width: "100%",
   },
-  codeLeft: { flex: 1, paddingRight: 8 },
+  codeLeft: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 8,
+  },
+  countPillSlot: {
+    flexShrink: 0,
+    paddingTop: 2,
+  },
   codeKicker: {
     fontFamily: Font.bold,
     fontSize: 10,
@@ -837,30 +995,44 @@ const styles = StyleSheet.create({
     fontWeight: "normal",
     color: `${GolfColors.sage}F2`,
   },
-  codeRightCol: {
-    alignItems: "flex-end",
+  codeActionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    flexWrap: "wrap",
+    marginTop: 36,
+    gap: 8,
   },
   countPill: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 6,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: 12,
     backgroundColor: GolfColors.inputFill,
     borderWidth: 1,
     borderColor: GolfColors.border,
+    alignItems: "center",
+    justifyContent: "center",
   },
   countPillText: {
     fontFamily: Font.bold,
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: "normal",
     color: "#FFFFFF",
+    textAlign: "center",
   },
   iconTile: {
-    marginTop: 12,
     padding: 10,
     borderRadius: 12,
     backgroundColor: "rgba(212,175,55,0.12)",
     borderWidth: 1,
     borderColor: "rgba(212,175,55,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 40,
+    minHeight: 40,
+  },
+  iconTileHostTrailing: {
+    marginLeft: "auto",
   },
   card: {
     backgroundColor: "rgba(20,41,24,0.94)",
@@ -868,79 +1040,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: GolfColors.border,
     paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 16,
     marginBottom: 16,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 18,
     elevation: 8,
-  },
-  settingsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  settingsKicker: {
-    fontFamily: Font.bold,
-    marginLeft: 8,
-    fontSize: 13,
-    fontWeight: "normal",
-    letterSpacing: 1.8,
-    color: GolfColors.sage,
-  },
-  editBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  editBtnLabel: {
-    fontFamily: Font.semiBold,
-    fontSize: 14,
-    fontWeight: "normal",
-    color: GolfColors.gold,
-  },
-  hostHint: {
-    fontFamily: Font.regular,
-    fontSize: 11,
-    fontWeight: "normal",
-    color: `${GolfColors.sage}D9`,
-  },
-  settingTilesRow: {
-    flexDirection: "row",
-  },
-  settingTile: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: GolfColors.inputFill,
-    borderWidth: 1,
-    borderColor: GolfColors.border,
-  },
-  settingTileHead: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  settingTileLabel: {
-    fontFamily: Font.bold,
-    fontSize: 11,
-    fontWeight: "normal",
-    letterSpacing: 0.4,
-    color: `${GolfColors.sage}F2`,
-  },
-  settingTileValue: {
-    fontFamily: Font.bold,
-    marginTop: 6,
-    fontSize: 16,
-    fontWeight: "normal",
-    color: "#FFFFFF",
-  },
-  settingTileSub: {
-    fontFamily: Font.regular,
-    marginTop: 2,
-    fontSize: 11,
-    fontWeight: "normal",
-    color: `${GolfColors.mutedGreen}F2`,
   },
   playersHeader: {
     flexDirection: "row",
@@ -970,6 +1076,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  playerKickButton: {
+    padding: 6,
+    marginLeft: 4,
   },
   emptyAvatar: {
     width: 40,
@@ -1031,69 +1141,53 @@ const styles = StyleSheet.create({
     fontWeight: "normal",
     letterSpacing: 0.5,
   },
-  bottomBar: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 12,
-    backgroundColor: "rgba(7,18,9,0.92)",
-    borderTopWidth: 1,
-    borderTopColor: "rgba(212,175,55,0.12)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 24,
-    elevation: 24,
+  modalSettingsRoot: {
+    flex: 1,
   },
-  bottomBarElevated: {
-    position: "relative",
-    zIndex: 50,
-    elevation: 50,
+  modalBackdropDim: {
+    backgroundColor: "rgba(0,0,0,0.55)",
   },
-  primaryOutline: {
-    alignSelf: "stretch",
-    alignItems: "center",
+  modalSettingsFrame: {
+    ...StyleSheet.absoluteFillObject,
     justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: "rgba(212,175,55,0.6)",
-    backgroundColor: "rgba(212,175,55,0.08)",
-    shadowColor: GolfColors.gold,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.14,
-    shadowRadius: 20,
-    elevation: 6,
-  },
-  primaryOutlineText: {
-    fontFamily: Font.bold,
-    marginLeft: 8,
-    fontSize: 15,
-    fontWeight: "normal",
-    letterSpacing: 1.5,
-    color: GolfColors.gold,
-  },
-  dangerOutline: {
-    alignSelf: "stretch",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,82,82,0.7)",
-    backgroundColor: "rgba(255,82,82,0.05)",
-  },
-  dangerOutlineText: {
-    fontFamily: Font.bold,
-    fontSize: 15,
-    fontWeight: "normal",
-    letterSpacing: 1.5,
-    color: "#FF5252",
+    paddingHorizontal: 24,
   },
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.55)",
     justifyContent: "center",
     paddingHorizontal: 24,
+  },
+  copySnackbarWrap: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    zIndex: 200,
+    alignItems: "center",
+  },
+  copySnackbar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    maxWidth: 400,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "rgba(20,41,24,0.96)",
+    borderWidth: 1,
+    borderColor: GolfColors.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  copySnackbarText: {
+    fontFamily: Font.regular,
+    fontSize: 14,
+    fontWeight: "normal",
+    color: "#FFFFFF",
   },
   qrSheet: {
     borderRadius: 20,
@@ -1139,12 +1233,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   settingsSheet: {
-    maxHeight: "90%",
+    maxHeight: "94%",
+    width: "100%",
+    maxWidth: 440,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: GolfColors.border,
     backgroundColor: GolfColors.forest,
-    padding: 20,
+    padding: 22,
+  },
+  settingsModalBody: {
+    paddingBottom: 4,
   },
   modalTitle: {
     fontFamily: Font.bold,
@@ -1165,6 +1264,41 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 10,
     marginTop: 14,
+  },
+  startGoldWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 14,
+  },
+  startGoldChip: {
+    minWidth: 44,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  startGoldChipOn: {
+    backgroundColor: GolfColors.gold,
+    borderColor: GolfColors.gold,
+  },
+  startGoldChipOff: {
+    backgroundColor: GolfColors.inputFill,
+    borderColor: GolfColors.border,
+  },
+  startGoldChipTextOn: {
+    fontFamily: Font.bold,
+    fontSize: 14,
+    fontWeight: "normal",
+    color: GolfColors.scaffold,
+  },
+  startGoldChipTextOff: {
+    fontFamily: Font.bold,
+    fontSize: 14,
+    fontWeight: "normal",
+    color: "#FFFFFF",
   },
   holeChip: {
     paddingHorizontal: 20,
@@ -1223,6 +1357,33 @@ const styles = StyleSheet.create({
     backgroundColor: GolfColors.inputFill,
     borderColor: GolfColors.border,
   },
+  modeCardBeerRunDisabled: {
+    opacity: 0.72,
+  },
+  modeCardBeerRunActiveOutline: {
+    borderColor: "rgba(212,175,55,0.5)",
+  },
+  modeCardTitleDisabled: {
+    fontFamily: Font.bold,
+    fontSize: 14,
+    fontWeight: "normal",
+    color: `${GolfColors.sage}E6`,
+  },
+  modeCardSubDisabled: {
+    fontFamily: Font.regular,
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: "normal",
+    color: `${GolfColors.mutedGreen}E6`,
+  },
+  modeCardBeerRunCurrentHint: {
+    fontFamily: Font.regular,
+    marginTop: 8,
+    fontSize: 11,
+    fontWeight: "normal",
+    fontStyle: "italic",
+    color: `${GolfColors.sage}CC`,
+  },
   modeCardTitleOn: {
     fontFamily: Font.bold,
     fontSize: 14,
@@ -1256,7 +1417,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     gap: 16,
   },
-  modalCancel: {
+  modalClose: {
     fontFamily: Font.regular,
     fontSize: 15,
     fontWeight: "normal",

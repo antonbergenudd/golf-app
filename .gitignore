@@ -6,8 +6,16 @@ node_modules/
 # Expo
 .expo/
 dist/
+dist-*/
 web-build/
 expo-env.d.ts
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+
+# Design scratch (v0 / prototype dumps — not part of the app build)
+design/
 
 # Native
 .kotlin/
