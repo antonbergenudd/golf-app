@@ -127,6 +127,23 @@ export function applyDeltasToPoints(
 }
 
 /**
+ * True when a `supabase.rpc()` error means the function isn't in the schema —
+ * i.e. the migration that defines it hasn't been applied. Callers use this to
+ * decide whether to run their pre-RPC client-side fallback.
+ */
+export function rpcFunctionMissing(error: {
+  code?: string;
+  message?: string;
+}): boolean {
+  return (
+    error.code === "PGRST202" ||
+    /could not find the function|does not exist|schema cache/i.test(
+      error.message ?? "",
+    )
+  );
+}
+
+/**
  * Apply signed `deltas` (playerId -> change) to `games.player_points`.
  *
  * Prefers the atomic `apply_point_deltas` RPC (migration
@@ -149,13 +166,7 @@ export async function applyPointDeltas(
     p_deltas: clean,
   });
   if (!error) return;
-
-  const missingFn =
-    error.code === "PGRST202" ||
-    /could not find the function|does not exist|schema cache/i.test(
-      error.message ?? "",
-    );
-  if (!missingFn) throw error;
+  if (!rpcFunctionMissing(error)) throw error;
 
   await mergeGamePoints(gameId, (pp) => applyDeltasToPoints(pp, clean));
 }

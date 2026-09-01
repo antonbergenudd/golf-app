@@ -411,6 +411,30 @@ export type Database = {
         Args: { p_deltas: Json; p_game_id: string }
         Returns: Json
       }
+      assign_trial_combat_deputy: {
+        Args: {
+          p_card_hole: number
+          p_card_id: string
+          p_deputy_id: string
+          p_deputy_name: string
+          p_game_id: string
+          p_sponsor_id: string
+        }
+        Returns: Json
+      }
+      claim_challenge: {
+        Args: {
+          p_card_hole: number
+          p_card_id: string
+          p_game_id: string
+          p_player_id: string
+        }
+        Returns: Json
+      }
+      is_game_member: {
+        Args: { p_game_id: string; p_player_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

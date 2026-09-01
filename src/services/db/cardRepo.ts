@@ -17,6 +17,7 @@ import {
   nowIso,
   playerCardsId,
   REROLL_HAND_MAX_USES,
+  rpcFunctionMissing,
   subscribeTable,
 } from "./shared";
 
@@ -136,22 +137,34 @@ export async function markChallengeClaimed(input: {
   cardId: string;
   cardHole: number;
 }): Promise<void> {
-  const pcId = playerCardsId(input.gameId, input.playerId);
-  await mutatePlayerCards(pcId, (cards) => {
-    const idx = cards.findIndex((c) => {
-      if (!isChallengeCardType(String(c.type))) return false;
-      if (String(c.id) !== input.cardId) return false;
-      return Number(c.hole) === input.cardHole;
-    });
-    if (idx < 0) throw new Error("Challenge not found");
-    if (cards[idx]!.claimed === true)
-      throw new Error("Challenge already claimed");
-    if (cards[idx]!.verificationPending === true) {
-      throw new Error("Challenge is awaiting verification");
-    }
-    cards[idx] = { ...cards[idx]!, claimed: true };
-    return { cards };
+  const { error } = await supabase.rpc("claim_challenge", {
+    p_game_id: input.gameId,
+    p_player_id: input.playerId,
+    p_card_id: input.cardId,
+    p_card_hole: input.cardHole,
   });
+  if (!error) return;
+  if (!rpcFunctionMissing(error)) throw new Error(error.message);
+
+  // Pre-migration fallback: client-side optimistic write.
+  await mutatePlayerCards(
+    playerCardsId(input.gameId, input.playerId),
+    (cards) => {
+      const idx = cards.findIndex((c) => {
+        if (!isChallengeCardType(String(c.type))) return false;
+        if (String(c.id) !== input.cardId) return false;
+        return Number(c.hole) === input.cardHole;
+      });
+      if (idx < 0) throw new Error("Challenge not found");
+      if (cards[idx]!.claimed === true)
+        throw new Error("Challenge already claimed");
+      if (cards[idx]!.verificationPending === true) {
+        throw new Error("Challenge is awaiting verification");
+      }
+      cards[idx] = { ...cards[idx]!, claimed: true };
+      return { cards };
+    },
+  );
 }
 
 export async function assignTrialCombatDeputy(input: {
@@ -165,26 +178,41 @@ export async function assignTrialCombatDeputy(input: {
   if (input.deputyId === input.sponsorId) {
     throw new Error("You cannot assign yourself as fighter");
   }
-  const pcId = playerCardsId(input.gameId, input.sponsorId);
-  await mutatePlayerCards(pcId, (cards) => {
-    const idx = cards.findIndex((c) => {
-      if (!isChallengeCardType(String(c.type))) return false;
-      if (String(c.id) !== input.challengeCardId) return false;
-      return Number(c.hole) === input.cardHole;
-    });
-    if (idx < 0) throw new Error("Challenge not found");
-    if (cards[idx]!.claimed === true)
-      throw new Error("Challenge already claimed");
-    if (cards[idx]!.verificationPending === true) {
-      throw new Error("Challenge is already awaiting verification");
-    }
-    cards[idx] = {
-      ...cards[idx]!,
-      trialCombatDeputyId: input.deputyId,
-      trialCombatDeputyName: input.deputyName,
-    };
-    return { cards };
+
+  const { error } = await supabase.rpc("assign_trial_combat_deputy", {
+    p_game_id: input.gameId,
+    p_sponsor_id: input.sponsorId,
+    p_deputy_id: input.deputyId,
+    p_deputy_name: input.deputyName,
+    p_card_id: input.challengeCardId,
+    p_card_hole: input.cardHole,
   });
+  if (!error) return;
+  if (!rpcFunctionMissing(error)) throw new Error(error.message);
+
+  // Pre-migration fallback: client-side optimistic write.
+  await mutatePlayerCards(
+    playerCardsId(input.gameId, input.sponsorId),
+    (cards) => {
+      const idx = cards.findIndex((c) => {
+        if (!isChallengeCardType(String(c.type))) return false;
+        if (String(c.id) !== input.challengeCardId) return false;
+        return Number(c.hole) === input.cardHole;
+      });
+      if (idx < 0) throw new Error("Challenge not found");
+      if (cards[idx]!.claimed === true)
+        throw new Error("Challenge already claimed");
+      if (cards[idx]!.verificationPending === true) {
+        throw new Error("Challenge is already awaiting verification");
+      }
+      cards[idx] = {
+        ...cards[idx]!,
+        trialCombatDeputyId: input.deputyId,
+        trialCombatDeputyName: input.deputyName,
+      };
+      return { cards };
+    },
+  );
 }
 
 export async function markHoleActionConsumed(input: {
