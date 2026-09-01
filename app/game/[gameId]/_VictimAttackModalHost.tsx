@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.78)",
   },
   victimAttackBackdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   victimAttackSafe: {
     flex: 1,

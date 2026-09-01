@@ -1,10 +1,10 @@
-import { useNavigation } from "@react-navigation/native";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import {
+  useNavigation,
   useGlobalSearchParams,
   useLocalSearchParams,
   usePathname,
 } from "expo-router";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,

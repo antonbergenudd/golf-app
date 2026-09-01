@@ -1,11 +1,12 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import {
+  Tabs,
   useGlobalSearchParams,
   useLocalSearchParams,
   usePathname,
   useSegments,
 } from "expo-router";
+import type { ComponentProps } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -41,7 +42,12 @@ const idleFab: GameFabRegistration = {
   accessibilityLabel: "Score",
 };
 
-type GameSessionTabBarProps = BottomTabBarProps & {
+/** The props expo-router's `<Tabs tabBar={...}>` hands its render callback. */
+type TabBarRenderProps = Parameters<
+  NonNullable<ComponentProps<typeof Tabs>["tabBar"]>
+>[0];
+
+type GameSessionTabBarProps = TabBarRenderProps & {
   /** From `game/[gameId]` layout — always set so hooks work when tab-level params omit `gameId`. */
   sessionGameId?: string;
 };

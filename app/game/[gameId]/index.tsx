@@ -5,6 +5,7 @@ import {
   useGlobalSearchParams,
   useLocalSearchParams,
   usePathname,
+  useFocusEffect,
 } from "expo-router";
 import {
   useCallback,
@@ -15,7 +16,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useFocusEffect } from "@react-navigation/native";
 import {
   ActivityIndicator,
   Animated,
@@ -856,7 +856,7 @@ export default function GameScreen() {
               <Animated.View
                 pointerEvents="none"
                 style={[
-                  StyleSheet.absoluteFillObject,
+                  StyleSheet.absoluteFill,
                   {
                     opacity: balanceFlashOpacity,
                     backgroundColor:

@@ -1,8 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, useLocalSearchParams } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
+import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -648,7 +647,7 @@ export default function LobbyRoomScreen() {
         >
           <View style={styles.modalSettingsRoot}>
             <Pressable
-              style={[StyleSheet.absoluteFillObject, styles.modalBackdropDim]}
+              style={[StyleSheet.absoluteFill, styles.modalBackdropDim]}
               onPress={closeSettingsModal}
               accessibilityRole="button"
               accessibilityLabel="Dismiss game settings"
@@ -1196,7 +1195,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.55)",
   },
   modalSettingsFrame: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
