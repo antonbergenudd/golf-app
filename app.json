@@ -3,7 +3,7 @@
     "name": "Fairway Chaos",
     "slug": "golf-app",
     "scheme": "golfapp",
-    "version": "1.0.3",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
