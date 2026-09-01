@@ -1,7 +1,7 @@
 import { Slot } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
-import { VictimAttackModalHost } from "./[gameId]/_VictimAttackModalHost";
+import { VictimAttackModalHost } from "@/components/fairway/VictimAttackModalHost";
 
 /**
  * Wraps every `/game/...` screen so the victim attack alert mounts even when the

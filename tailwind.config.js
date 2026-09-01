@@ -6,6 +6,10 @@ module.exports = {
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
   presets: [require("nativewind/preset")],
+  // App is dark-only (app.json userInterfaceStyle: "dark"). "class" mode lets
+  // the app control the scheme instead of following prefers-color-scheme —
+  // replaces the old runtime StyleSheet.setFlag hack, which is gone in RN 0.86.
+  darkMode: "class",
   theme: {
     extend: {
       fontFamily: {
