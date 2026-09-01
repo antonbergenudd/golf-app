@@ -12,11 +12,14 @@ import * as verificationRepo from "./verificationRepo";
 import {
   addGameEvent,
   applyPointDeltas,
+  mutatePlayerCards,
   nowIso,
   playerCardsId,
   REROLL_HAND_MAX_USES,
   subscribeTable,
 } from "./shared";
+
+type CardRow = Record<string, unknown>;
 
 export async function distributePlayerCards(
   gameId: string,
@@ -133,29 +136,21 @@ export async function markChallengeClaimed(input: {
   cardHole: number;
 }): Promise<void> {
   const pcId = playerCardsId(input.gameId, input.playerId);
-  const { data: row } = await supabase
-    .from("player_cards")
-    .select("*")
-    .eq("id", pcId)
-    .single();
-  if (!row) throw new Error("Player cards not found");
-  const cards = [...((row.cards as Record<string, unknown>[]) ?? [])];
-  const idx = cards.findIndex((c) => {
-    if (!isChallengeCardType(String(c.type))) return false;
-    if (String(c.id) !== input.cardId) return false;
-    return Number(c.hole) === input.cardHole;
+  await mutatePlayerCards(pcId, (cards) => {
+    const idx = cards.findIndex((c) => {
+      if (!isChallengeCardType(String(c.type))) return false;
+      if (String(c.id) !== input.cardId) return false;
+      return Number(c.hole) === input.cardHole;
+    });
+    if (idx < 0) throw new Error("Challenge not found");
+    if (cards[idx]!.claimed === true)
+      throw new Error("Challenge already claimed");
+    if (cards[idx]!.verificationPending === true) {
+      throw new Error("Challenge is awaiting verification");
+    }
+    cards[idx] = { ...cards[idx]!, claimed: true };
+    return { cards };
   });
-  if (idx < 0) throw new Error("Challenge not found");
-  if (cards[idx]!.claimed === true)
-    throw new Error("Challenge already claimed");
-  if (cards[idx]!.verificationPending === true) {
-    throw new Error("Challenge is awaiting verification");
-  }
-  cards[idx] = { ...cards[idx]!, claimed: true };
-  await supabase
-    .from("player_cards")
-    .update({ cards, updated_at: nowIso() })
-    .eq("id", pcId);
 }
 
 export async function assignTrialCombatDeputy(input: {
@@ -170,33 +165,25 @@ export async function assignTrialCombatDeputy(input: {
     throw new Error("You cannot assign yourself as fighter");
   }
   const pcId = playerCardsId(input.gameId, input.sponsorId);
-  const { data: row } = await supabase
-    .from("player_cards")
-    .select("*")
-    .eq("id", pcId)
-    .single();
-  if (!row) throw new Error("Player cards not found");
-  const cards = [...((row.cards as Record<string, unknown>[]) ?? [])];
-  const idx = cards.findIndex((c) => {
-    if (!isChallengeCardType(String(c.type))) return false;
-    if (String(c.id) !== input.challengeCardId) return false;
-    return Number(c.hole) === input.cardHole;
+  await mutatePlayerCards(pcId, (cards) => {
+    const idx = cards.findIndex((c) => {
+      if (!isChallengeCardType(String(c.type))) return false;
+      if (String(c.id) !== input.challengeCardId) return false;
+      return Number(c.hole) === input.cardHole;
+    });
+    if (idx < 0) throw new Error("Challenge not found");
+    if (cards[idx]!.claimed === true)
+      throw new Error("Challenge already claimed");
+    if (cards[idx]!.verificationPending === true) {
+      throw new Error("Challenge is already awaiting verification");
+    }
+    cards[idx] = {
+      ...cards[idx]!,
+      trialCombatDeputyId: input.deputyId,
+      trialCombatDeputyName: input.deputyName,
+    };
+    return { cards };
   });
-  if (idx < 0) throw new Error("Challenge not found");
-  if (cards[idx]!.claimed === true)
-    throw new Error("Challenge already claimed");
-  if (cards[idx]!.verificationPending === true) {
-    throw new Error("Challenge is already awaiting verification");
-  }
-  cards[idx] = {
-    ...cards[idx]!,
-    trialCombatDeputyId: input.deputyId,
-    trialCombatDeputyName: input.deputyName,
-  };
-  await supabase
-    .from("player_cards")
-    .update({ cards, updated_at: nowIso() })
-    .eq("id", pcId);
 }
 
 export async function markHoleActionConsumed(input: {
@@ -216,29 +203,21 @@ export async function markHoleActionConsumed(input: {
     throw new Error("That action is not part of this hole's offers");
 
   const pcId = playerCardsId(input.gameId, input.playerId);
-  const { data: pcRow } = await supabase
-    .from("player_cards")
-    .select("*")
-    .eq("id", pcId)
-    .single();
-  if (!pcRow) throw new Error("Player cards not found");
-  const cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
-  const idx = cards.findIndex((c) => {
-    if (c.type !== "action") return false;
-    if (String(c.id) !== input.cardId) return false;
-    if (Number(c.hole) !== input.cardHole) return false;
-    if (c.offerConsumed === true) return false;
-    const banked = c.banked === true;
-    const pending = c.pendingBank === true;
-    if (banked && !pending) return false;
-    return true;
+  await mutatePlayerCards(pcId, (cards) => {
+    const idx = cards.findIndex((c) => {
+      if (c.type !== "action") return false;
+      if (String(c.id) !== input.cardId) return false;
+      if (Number(c.hole) !== input.cardHole) return false;
+      if (c.offerConsumed === true) return false;
+      const banked = c.banked === true;
+      const pending = c.pendingBank === true;
+      if (banked && !pending) return false;
+      return true;
+    });
+    if (idx < 0) throw new Error("Action offer not found or already used");
+    cards[idx] = { ...cards[idx]!, offerConsumed: true };
+    return { cards };
   });
-  if (idx < 0) throw new Error("Action offer not found or already used");
-  cards[idx] = { ...cards[idx]!, offerConsumed: true };
-  await supabase
-    .from("player_cards")
-    .update({ cards, updated_at: nowIso() })
-    .eq("id", pcId);
 }
 
 export async function deleteBankedActionCard(input: {
@@ -248,32 +227,24 @@ export async function deleteBankedActionCard(input: {
   cardHole: number;
 }): Promise<void> {
   const pcId = playerCardsId(input.gameId, input.playerId);
-  const { data: pcRow } = await supabase
-    .from("player_cards")
-    .select("*")
-    .eq("id", pcId)
-    .single();
-  if (!pcRow) throw new Error("Player cards not found");
-  const cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
-  let idx = cards.findIndex((c) => {
-    if (c.type !== "action") return false;
-    if (c.banked !== true || c.pendingBank === true) return false;
-    if (String(c.id) !== input.cardId) return false;
-    return Number(c.hole) === input.cardHole;
-  });
-  if (idx < 0) {
-    idx = cards.findIndex((c) => {
+  await mutatePlayerCards(pcId, (cards) => {
+    let idx = cards.findIndex((c) => {
       if (c.type !== "action") return false;
       if (c.banked !== true || c.pendingBank === true) return false;
-      return String(c.id) === input.cardId;
+      if (String(c.id) !== input.cardId) return false;
+      return Number(c.hole) === input.cardHole;
     });
-  }
-  if (idx < 0) throw new Error("Saved action not found");
-  cards.splice(idx, 1);
-  await supabase
-    .from("player_cards")
-    .update({ cards, updated_at: nowIso() })
-    .eq("id", pcId);
+    if (idx < 0) {
+      idx = cards.findIndex((c) => {
+        if (c.type !== "action") return false;
+        if (c.banked !== true || c.pendingBank === true) return false;
+        return String(c.id) === input.cardId;
+      });
+    }
+    if (idx < 0) throw new Error("Saved action not found");
+    cards.splice(idx, 1);
+    return { cards };
+  });
 }
 
 export async function deletePendingBankedActionCard(input: {
@@ -283,32 +254,24 @@ export async function deletePendingBankedActionCard(input: {
   cardHole: number;
 }): Promise<void> {
   const pcId = playerCardsId(input.gameId, input.playerId);
-  const { data: pcRow } = await supabase
-    .from("player_cards")
-    .select("*")
-    .eq("id", pcId)
-    .single();
-  if (!pcRow) throw new Error("Player cards not found");
-  const cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
-  let idx = cards.findIndex((c) => {
-    if (c.type !== "action") return false;
-    if (c.pendingBank !== true) return false;
-    if (String(c.id) !== input.cardId) return false;
-    return Number(c.hole) === input.cardHole;
-  });
-  if (idx < 0) {
-    idx = cards.findIndex((c) => {
+  await mutatePlayerCards(pcId, (cards) => {
+    let idx = cards.findIndex((c) => {
       if (c.type !== "action") return false;
       if (c.pendingBank !== true) return false;
-      return String(c.id) === input.cardId;
+      if (String(c.id) !== input.cardId) return false;
+      return Number(c.hole) === input.cardHole;
     });
-  }
-  if (idx < 0) throw new Error("Pending saved action not found");
-  cards.splice(idx, 1);
-  await supabase
-    .from("player_cards")
-    .update({ cards, updated_at: nowIso() })
-    .eq("id", pcId);
+    if (idx < 0) {
+      idx = cards.findIndex((c) => {
+        if (c.type !== "action") return false;
+        if (c.pendingBank !== true) return false;
+        return String(c.id) === input.cardId;
+      });
+    }
+    if (idx < 0) throw new Error("Pending saved action not found");
+    cards.splice(idx, 1);
+    return { cards };
+  });
 }
 
 export async function markPendingBankedActionUsed(input: {
@@ -318,74 +281,66 @@ export async function markPendingBankedActionUsed(input: {
   cardHole: number;
 }): Promise<void> {
   const pcId = playerCardsId(input.gameId, input.playerId);
-  const [{ data: pcRow }, { data: gameDoc }] = await Promise.all([
-    supabase.from("player_cards").select("*").eq("id", pcId).single(),
-    supabase
-      .from("games")
-      .select("current_hole")
-      .eq("id", input.gameId)
-      .single(),
-  ]);
-  if (!pcRow) throw new Error("Player cards not found");
+  const { data: gameDoc } = await supabase
+    .from("games")
+    .select("current_hole")
+    .eq("id", input.gameId)
+    .single();
   if (!gameDoc) throw new Error("Game not found");
   const curHole = Number(gameDoc.current_hole ?? 1);
 
-  const cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
-  // Prefer bag-saved copies (banked) so playing inventory never touches an unrelated
-  // market row that shares the same card id + pendingBank (e.g. just purchased).
-  let idx = cards.findIndex((c) => {
-    if (c.type !== "action") return false;
-    if (c.inventoryUsed === true) return false;
-    if (c.banked !== true) return false;
-    if (String(c.id) !== input.cardId) return false;
-    const hole = c.hole != null ? Number(c.hole) : null;
-    return hole === null || hole === input.cardHole;
-  });
-  if (idx < 0) {
-    idx = cards.findIndex((c) => {
+  await mutatePlayerCards(pcId, (cards) => {
+    // Prefer bag-saved copies (banked) so playing inventory never touches an
+    // unrelated market row that shares the same card id + pendingBank.
+    let idx = cards.findIndex((c) => {
       if (c.type !== "action") return false;
       if (c.inventoryUsed === true) return false;
-      if (c.pendingBank !== true || c.banked === true) return false;
+      if (c.banked !== true) return false;
       if (String(c.id) !== input.cardId) return false;
       const hole = c.hole != null ? Number(c.hole) : null;
       return hole === null || hole === input.cardHole;
     });
-  }
-  if (idx < 0) throw new Error("Saved action not found");
-
-  const played = cards[idx]!;
-  const playedHole = played.hole != null ? Number(played.hole) : input.cardHole;
-
-  // Strip stays full: consume from bag but refill this hole's slot with a fresh offer.
-  if (played.type === "action" && playedHole === curHole) {
-    const excludeIds = new Set<string>();
-    for (let i = 0; i < cards.length; i++) {
-      if (i === idx) continue;
-      const c = cards[i]!;
-      if (c.type === "action" && Number(c.hole ?? 0) === curHole) {
-        const id = String(c.id ?? "");
-        if (id) excludeIds.add(id);
-      }
+    if (idx < 0) {
+      idx = cards.findIndex((c) => {
+        if (c.type !== "action") return false;
+        if (c.inventoryUsed === true) return false;
+        if (c.pendingBank !== true || c.banked === true) return false;
+        if (String(c.id) !== input.cardId) return false;
+        const hole = c.hole != null ? Number(c.hole) : null;
+        return hole === null || hole === input.cardHole;
+      });
     }
-    const pool = pickCards("action", {
-      count: 1,
-      playerId: input.playerId,
-      hole: curHole,
-      excludeCardIds: excludeIds,
-    });
-    if (pool.length > 0) {
-      cards[idx] = pool[0]!;
+    if (idx < 0) throw new Error("Saved action not found");
+
+    const played = cards[idx]!;
+    const playedHole =
+      played.hole != null ? Number(played.hole) : input.cardHole;
+
+    // Strip stays full: consume from bag but refill this hole's slot with a fresh offer.
+    if (played.type === "action" && playedHole === curHole) {
+      const excludeIds = new Set<string>();
+      for (let i = 0; i < cards.length; i++) {
+        if (i === idx) continue;
+        const c = cards[i]!;
+        if (c.type === "action" && Number(c.hole ?? 0) === curHole) {
+          const id = String(c.id ?? "");
+          if (id) excludeIds.add(id);
+        }
+      }
+      const pool = pickCards("action", {
+        count: 1,
+        playerId: input.playerId,
+        hole: curHole,
+        excludeCardIds: excludeIds,
+      });
+      cards[idx] =
+        pool.length > 0 ? pool[0]! : { ...played, inventoryUsed: true };
     } else {
       cards[idx] = { ...played, inventoryUsed: true };
     }
-  } else {
-    cards[idx] = { ...played, inventoryUsed: true };
-  }
 
-  await supabase
-    .from("player_cards")
-    .update({ cards, updated_at: nowIso() })
-    .eq("id", pcId);
+    return { cards };
+  });
 }
 
 export async function removeActionCardByIdHole(input: {
@@ -395,25 +350,17 @@ export async function removeActionCardByIdHole(input: {
   cardHole: number;
 }): Promise<void> {
   const pcId = playerCardsId(input.gameId, input.playerId);
-  const { data: pcRow } = await supabase
-    .from("player_cards")
-    .select("*")
-    .eq("id", pcId)
-    .single();
-  if (!pcRow) throw new Error("Player cards not found");
-  const cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
-  const idx = cards.findIndex((c) => {
-    if (c.type !== "action") return false;
-    if (String(c.id) !== input.cardId) return false;
-    const h = c.hole != null ? Number(c.hole) : null;
-    return h === null || h === input.cardHole;
+  await mutatePlayerCards(pcId, (cards) => {
+    const idx = cards.findIndex((c) => {
+      if (c.type !== "action") return false;
+      if (String(c.id) !== input.cardId) return false;
+      const h = c.hole != null ? Number(c.hole) : null;
+      return h === null || h === input.cardHole;
+    });
+    if (idx < 0) throw new Error("Action card not found");
+    cards.splice(idx, 1);
+    return { cards };
   });
-  if (idx < 0) throw new Error("Action card not found");
-  cards.splice(idx, 1);
-  await supabase
-    .from("player_cards")
-    .update({ cards, updated_at: nowIso() })
-    .eq("id", pcId);
 }
 
 export function subscribePlayerCards(
@@ -481,36 +428,30 @@ export async function rerollPlayerChallenges(
   const currentHole = Number(gameDoc.current_hole ?? 1);
 
   const pcId = playerCardsId(gameId, playerId);
-  const { data: pcRow } = await supabase
-    .from("player_cards")
-    .select("*")
-    .eq("id", pcId)
-    .single();
-  if (!pcRow) throw new Error("Player cards not found");
-  const rerollsUsed = Number(pcRow.challenge_rerolls_used ?? 0);
-  const cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
-  const challenges = cards.filter((c) => isChallengeCardType(String(c.type)));
-  const actions = cards.filter((c) => c.type === "action");
-
-  if (!free && rerollsUsed >= REROLL_HAND_MAX_USES) {
-    throw new Error("Challenge reroll limit reached");
-  }
-  if (!free && challenges.length === 0) {
-    throw new Error("No challenges to reroll");
-  }
-
+  // Draw once outside the retry loop so the global_effects write below matches
+  // exactly what lands in the hand.
   const newChallenges = pickTieredChallengeDraw(playerId, currentHole);
-  const newCards = [...newChallenges, ...actions];
 
-  const update: Record<string, unknown> = {
-    cards: newCards,
-    challenge_rerolls_used: free ? rerollsUsed : rerollsUsed + 1,
-    updated_at: nowIso(),
-  };
-  if (opts?.hideNextChallengeDrawPopup) {
-    update.hide_next_challenge_draw_popup = true;
-  }
-  await supabase.from("player_cards").update(update).eq("id", pcId);
+  await mutatePlayerCards(pcId, (cards, row) => {
+    const rerollsUsed = Number(row.challenge_rerolls_used ?? 0);
+    const challenges = cards.filter((c) => isChallengeCardType(String(c.type)));
+    const actions = cards.filter((c) => c.type === "action");
+
+    if (!free && rerollsUsed >= REROLL_HAND_MAX_USES) {
+      throw new Error("Challenge reroll limit reached");
+    }
+    if (!free && challenges.length === 0) {
+      throw new Error("No challenges to reroll");
+    }
+
+    const extra: Record<string, unknown> = {
+      challenge_rerolls_used: free ? rerollsUsed : rerollsUsed + 1,
+    };
+    if (opts?.hideNextChallengeDrawPopup) {
+      extra.hide_next_challenge_draw_popup = true;
+    }
+    return { cards: [...newChallenges, ...actions], extra };
+  });
 
   const { data: geRow } = await supabase
     .from("global_effects")
@@ -555,43 +496,35 @@ export async function rerollPlayerActions(
   const currentHole = Number(gameDoc.current_hole ?? 1);
 
   const pcId = playerCardsId(gameId, playerId);
-  const { data: pcRow } = await supabase
-    .from("player_cards")
-    .select("*")
-    .eq("id", pcId)
-    .single();
-  if (!pcRow) throw new Error("Player cards not found");
-  const rerollsUsed = Number(pcRow.action_rerolls_used ?? 0);
-  if (rerollsUsed >= REROLL_HAND_MAX_USES) {
-    throw new Error("Action reroll limit reached");
-  }
+  await mutatePlayerCards(pcId, (cards, row) => {
+    const rerollsUsed = Number(row.action_rerolls_used ?? 0);
+    if (rerollsUsed >= REROLL_HAND_MAX_USES) {
+      throw new Error("Action reroll limit reached");
+    }
 
-  const cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
-  const challenges = cards.filter((c) => isChallengeCardType(String(c.type)));
-  const actions = cards.filter((c) => c.type === "action");
-  if (actions.length === 0) throw new Error("No actions to reroll");
+    const challenges = cards.filter((c) => isChallengeCardType(String(c.type)));
+    const actions = cards.filter((c) => c.type === "action");
+    if (actions.length === 0) throw new Error("No actions to reroll");
 
-  const keptActions = mergeKeptActionsForHoleReroll(actions, currentHole);
-  const excludeIds = new Set(
-    keptActions.map((c) => String(c.id)).filter(Boolean),
-  );
-  const newActions = pickCards("action", {
-    count: 3,
-    playerId,
-    hole: currentHole,
-    excludeCardIds: excludeIds,
+    const keptActions = mergeKeptActionsForHoleReroll(actions, currentHole);
+    const excludeIds = new Set(
+      keptActions.map((c) => String(c.id)).filter(Boolean),
+    );
+    const newActions = pickCards("action", {
+      count: 3,
+      playerId,
+      hole: currentHole,
+      excludeCardIds: excludeIds,
+    });
+
+    const extra: Record<string, unknown> = {
+      action_rerolls_used: rerollsUsed + 1,
+    };
+    if (opts?.hideNextChallengeDrawPopup) {
+      extra.hide_next_challenge_draw_popup = true;
+    }
+    return { cards: [...challenges, ...keptActions, ...newActions], extra };
   });
-  const newCards = [...challenges, ...keptActions, ...newActions];
-
-  const update: Record<string, unknown> = {
-    cards: newCards,
-    action_rerolls_used: rerollsUsed + 1,
-    updated_at: nowIso(),
-  };
-  if (opts?.hideNextChallengeDrawPopup) {
-    update.hide_next_challenge_draw_popup = true;
-  }
-  await supabase.from("player_cards").update(update).eq("id", pcId);
 }
 
 export async function bankHoleOfferAction(input: {
@@ -618,46 +551,37 @@ export async function bankHoleOfferAction(input: {
   }
 
   const pcId = playerCardsId(input.gameId, input.playerId);
-  const { data: pcRow } = await supabase
-    .from("player_cards")
-    .select("*")
-    .eq("id", pcId)
-    .single();
-  if (!pcRow) throw new Error("Player cards not found");
-  const cards = [...((pcRow.cards as Record<string, unknown>[]) ?? [])];
-  const idx = cards.findIndex((c) => {
-    if (c.type !== "action") return false;
-    if (c.banked === true) return false;
-    if (c.pendingBank === true) return false;
-    if (c.offerConsumed === true) return false;
-    if (String(c.id) !== input.cardId) return false;
-    return Number(c.hole) === input.cardHole;
-  });
-  if (idx < 0) throw new Error("Action offer not found or already saved");
-
-  const buyCost = Math.min(
-    9999,
-    Math.max(0, Number((cards[idx]!.points as number) ?? 1)),
-  );
   const pp = (gameDoc.player_points as Record<string, number>) ?? {};
   const balance = pp[input.playerId] ?? 0;
-  if (balance < buyCost) {
-    throw new Error(`Need at least ${buyCost} points to save an action`);
-  }
 
-  cards[idx] = {
-    ...cards[idx]!,
-    offerConsumed: true,
-    pendingBank: true,
-  };
+  const buyCost = await mutatePlayerCards<number>(pcId, (cards) => {
+    const idx = cards.findIndex((c) => {
+      if (c.type !== "action") return false;
+      if (c.banked === true) return false;
+      if (c.pendingBank === true) return false;
+      if (c.offerConsumed === true) return false;
+      if (String(c.id) !== input.cardId) return false;
+      return Number(c.hole) === input.cardHole;
+    });
+    if (idx < 0) throw new Error("Action offer not found or already saved");
 
-  if (buyCost > 0) {
+    const cost = Math.min(
+      9999,
+      Math.max(0, Number((cards[idx]!.points as number) ?? 1)),
+    );
+    if (balance < cost) {
+      throw new Error(`Need at least ${cost} points to save an action`);
+    }
+
+    cards[idx] = { ...cards[idx]!, offerConsumed: true, pendingBank: true };
+    return { cards, result: cost };
+  });
+
+  // Mark first, then charge: a rare process death here leaves a saved-but-unpaid
+  // card, which is more player-friendly than the old order's paid-but-lost card.
+  if (buyCost && buyCost > 0) {
     await gameRepo.deductPoints(input.gameId, input.playerId, buyCost);
   }
-  await supabase
-    .from("player_cards")
-    .update({ cards, updated_at: nowIso() })
-    .eq("id", pcId);
 }
 
 function isPlayableActionCandidate(c: Record<string, unknown>): boolean {
@@ -680,46 +604,28 @@ export async function stealRandomActionCardFromPlayer(input: {
 > {
   const thiefRef = playerCardsId(input.gameId, input.thiefPlayerId);
   const targetRef = playerCardsId(input.gameId, input.targetPlayerId);
-  const { data: thiefRow } = await supabase
-    .from("player_cards")
-    .select("*")
-    .eq("id", thiefRef)
-    .single();
-  const { data: targetRow } = await supabase
-    .from("player_cards")
-    .select("*")
-    .eq("id", targetRef)
-    .single();
-  if (!thiefRow || !targetRow) throw new Error("Player cards not found");
 
-  const thiefCards = [...((thiefRow.cards as Record<string, unknown>[]) ?? [])];
-  const targetCards = [
-    ...((targetRow.cards as Record<string, unknown>[]) ?? []),
-  ];
-  const candidateIndexes: number[] = [];
-  for (let i = 0; i < targetCards.length; i++) {
-    if (isPlayableActionCandidate(targetCards[i]!)) candidateIndexes.push(i);
-  }
-  if (candidateIndexes.length === 0) {
-    return { ok: false, reason: "no_cards" };
-  }
-  const removeIdx =
-    candidateIndexes[Math.floor(Math.random() * candidateIndexes.length)]!;
-  const removed = { ...targetCards.splice(removeIdx, 1)[0]! };
-  removed.banked = true;
-  delete removed.pendingBank;
-  delete removed.inventoryUsed;
-  delete removed.offerConsumed;
-  thiefCards.push(removed);
+  const removed = await mutatePlayerCards<CardRow>(targetRef, (cards) => {
+    const candidateIndexes: number[] = [];
+    for (let i = 0; i < cards.length; i++) {
+      if (isPlayableActionCandidate(cards[i]!)) candidateIndexes.push(i);
+    }
+    if (candidateIndexes.length === 0) return null;
+    const removeIdx =
+      candidateIndexes[Math.floor(Math.random() * candidateIndexes.length)]!;
+    const card = { ...cards.splice(removeIdx, 1)[0]! };
+    card.banked = true;
+    delete card.pendingBank;
+    delete card.inventoryUsed;
+    delete card.offerConsumed;
+    return { cards, result: card };
+  });
 
-  await supabase
-    .from("player_cards")
-    .update({ cards: targetCards, updated_at: nowIso() })
-    .eq("id", targetRef);
-  await supabase
-    .from("player_cards")
-    .update({ cards: thiefCards, updated_at: nowIso() })
-    .eq("id", thiefRef);
+  if (!removed) return { ok: false, reason: "no_cards" };
+
+  await mutatePlayerCards(thiefRef, (cards) => ({
+    cards: [...cards, removed],
+  }));
   return { ok: true, card: removed };
 }
 
@@ -731,29 +637,20 @@ export async function destroyRandomActionCardFromPlayer(input: {
   | { ok: false; reason: "no_cards" }
 > {
   const targetRef = playerCardsId(input.gameId, input.targetPlayerId);
-  const { data: targetRow } = await supabase
-    .from("player_cards")
-    .select("*")
-    .eq("id", targetRef)
-    .single();
-  if (!targetRow) throw new Error("Player cards not found");
-  const targetCards = [
-    ...((targetRow.cards as Record<string, unknown>[]) ?? []),
-  ];
-  const candidateIndexes: number[] = [];
-  for (let i = 0; i < targetCards.length; i++) {
-    if (isPlayableActionCandidate(targetCards[i]!)) candidateIndexes.push(i);
-  }
-  if (candidateIndexes.length === 0) {
-    return { ok: false, reason: "no_cards" };
-  }
-  const removeIdx =
-    candidateIndexes[Math.floor(Math.random() * candidateIndexes.length)]!;
-  const destroyed = { ...targetCards.splice(removeIdx, 1)[0]! };
-  await supabase
-    .from("player_cards")
-    .update({ cards: targetCards, updated_at: nowIso() })
-    .eq("id", targetRef);
+
+  const destroyed = await mutatePlayerCards<CardRow>(targetRef, (cards) => {
+    const candidateIndexes: number[] = [];
+    for (let i = 0; i < cards.length; i++) {
+      if (isPlayableActionCandidate(cards[i]!)) candidateIndexes.push(i);
+    }
+    if (candidateIndexes.length === 0) return null;
+    const removeIdx =
+      candidateIndexes[Math.floor(Math.random() * candidateIndexes.length)]!;
+    const card = { ...cards.splice(removeIdx, 1)[0]! };
+    return { cards, result: card };
+  });
+
+  if (!destroyed) return { ok: false, reason: "no_cards" };
   return { ok: true, card: destroyed };
 }
 

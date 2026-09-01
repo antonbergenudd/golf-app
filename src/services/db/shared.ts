@@ -160,6 +160,69 @@ export async function applyPointDeltas(
   await mergeGamePoints(gameId, (pp) => applyDeltasToPoints(pp, clean));
 }
 
+type CardRow = Record<string, unknown>;
+
+/**
+ * Optimistic-concurrency wrapper for the many `player_cards` read-modify-write
+ * flows (claim a challenge, bank an offer, play from the bag, reroll, …).
+ *
+ * Reads the row, runs `plan(cards, row)`, then writes back only if the row's
+ * `updated_at` is unchanged since the read. On a lost race it re-reads and
+ * retries. After `retries` losses it does one unguarded write from the freshest
+ * read — never worse than the pre-existing behaviour, just with newer data.
+ *
+ * `plan` gets a fresh copy of the cards array and the whole row; it returns
+ * `{ cards, extra?, result? }` to write or `null` to abort with no write.
+ * Throwing from `plan` propagates (used for the "not found" / guard errors).
+ */
+export async function mutatePlayerCards<T = void>(
+  pcId: string,
+  plan: (
+    cards: CardRow[],
+    row: CardRow,
+  ) => { cards: CardRow[]; extra?: Record<string, unknown>; result?: T } | null,
+  opts?: { retries?: number },
+): Promise<T | undefined> {
+  const retries = opts?.retries ?? 4;
+
+  for (let attempt = 0; ; attempt++) {
+    const { data: row } = await supabase
+      .from("player_cards")
+      .select("*")
+      .eq("id", pcId)
+      .maybeSingle();
+    if (!row) throw new Error("Player cards not found");
+
+    const cards = [...((row.cards as CardRow[]) ?? [])];
+    const planned = plan(cards, row as CardRow);
+    if (!planned) return undefined;
+
+    const payload = {
+      ...planned.extra,
+      cards: planned.cards,
+      updated_at: nowIso(),
+    };
+    const lastAttempt = attempt >= retries;
+
+    let write = supabase.from("player_cards").update(payload).eq("id", pcId);
+    if (!lastAttempt) {
+      write = write.eq("updated_at", row.updated_at as string);
+    }
+    const { data: written, error } = await write.select("id");
+    if (error) throw error;
+
+    if (lastAttempt || (written && written.length > 0)) {
+      if (lastAttempt && __DEV__ && !(written && written.length > 0)) {
+        console.warn(
+          `[mutatePlayerCards] ${pcId} lost ${retries} races; wrote unguarded`,
+        );
+      }
+      return planned.result;
+    }
+    await new Promise((r) => setTimeout(r, 40 + Math.random() * 90));
+  }
+}
+
 export async function addGameEvent(input: {
   gameId: string;
   playerId: string;
