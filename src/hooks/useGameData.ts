@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AppState } from "react-native";
 
 import type { Lobby } from "@/models/lobby";
 import { parseGameMode, type GameMode } from "@/models/gameMode";
@@ -36,6 +37,10 @@ type Args = { gameId: string; playerId: string; lobbyId: string };
  * {@link NormalizedGame}), the live-event feed, this player's card doc, the
  * scorecard rows, and the lobby snapshot. `setScoreRows` is exposed for
  * optimistic updates after saving a hole score.
+ *
+ * Subscriptions re-establish (and re-load) whenever the app returns to the
+ * foreground, so a phone that was pocketed for a few holes catches up on
+ * anything it missed while suspended.
  */
 export function useGameData({ gameId, playerId, lobbyId }: Args) {
   const [game, setGame] = useState<NormalizedGame | null>(null);
@@ -45,6 +50,14 @@ export function useGameData({ gameId, playerId, lobbyId }: Args) {
   );
   const [scoreRows, setScoreRows] = useState<Record<string, unknown>[]>([]);
   const [lobbySnap, setLobbySnap] = useState<Lobby | null>(null);
+  const [foregroundNonce, setForegroundNonce] = useState(0);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") setForegroundNonce((n) => n + 1);
+    });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     if (!lobbyId) return;
@@ -56,7 +69,7 @@ export function useGameData({ gameId, playerId, lobbyId }: Args) {
       active = false;
       u();
     };
-  }, [lobbyId]);
+  }, [lobbyId, foregroundNonce]);
 
   useEffect(() => {
     if (!gameId) return;
@@ -68,7 +81,7 @@ export function useGameData({ gameId, playerId, lobbyId }: Args) {
       active = false;
       u();
     };
-  }, [gameId]);
+  }, [gameId, foregroundNonce]);
 
   useEffect(() => {
     if (!gameId) return;
@@ -84,7 +97,7 @@ export function useGameData({ gameId, playerId, lobbyId }: Args) {
       unsubGame();
       unsubEvents();
     };
-  }, [gameId]);
+  }, [gameId, foregroundNonce]);
 
   useEffect(() => {
     if (!gameId || !playerId) return;
@@ -96,7 +109,7 @@ export function useGameData({ gameId, playerId, lobbyId }: Args) {
       active = false;
       u();
     };
-  }, [gameId, playerId]);
+  }, [gameId, playerId, foregroundNonce]);
 
   return { game, events, myCardsDoc, scoreRows, setScoreRows, lobbySnap };
 }
