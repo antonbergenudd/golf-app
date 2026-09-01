@@ -40,9 +40,9 @@ import {
   useRegisterGameTabFab,
   type GameFabRegistration,
 } from "@/context/GameShellContext";
+import { useGameData } from "@/hooks/useGameData";
 import { isAttackActionCard, isChallengeCardType } from "@/models/card";
-import { gameCurrencyLabel, parseGameMode } from "@/models/gameMode";
-import type { Lobby } from "@/models/lobby";
+import { gameCurrencyLabel } from "@/models/gameMode";
 import { DatabaseService, databaseService } from "@/services/databaseService";
 import { Font } from "@/theme/fonts";
 import * as GameBlur from "@/utils/blurForModalWeb";
@@ -87,19 +87,6 @@ const COLLAPSED_LIVE_FEED_BODY_HEIGHT_PX =
 
 const BALANCE_FLASH_GAIN = "rgba(34, 197, 94, 0.38)";
 const BALANCE_FLASH_LOSS = "rgba(248, 113, 113, 0.34)";
-
-function normalizeGame(row: Record<string, unknown> | null) {
-  if (!row) return null;
-  return {
-    currentHole: Number(row.current_hole ?? 1),
-    holes: Number(row.holes ?? 18),
-    mode: parseGameMode(row.mode),
-    playerPoints: (row.player_points as Record<string, number>) ?? {},
-    playerIds: (row.player_ids as string[]) ?? [],
-    status: String(row.status ?? "active"),
-    name: String(row.name ?? ""),
-  };
-}
 
 function starCountFromPoints(points: unknown): number {
   const n = Number(points);
@@ -206,11 +193,8 @@ export default function GameScreen() {
     "Player";
   const lobbyName = resolvedLobbyName || sessionRef.current.lobbyName;
 
-  const [game, setGame] = useState<ReturnType<typeof normalizeGame>>(null);
-  const [myCardsDoc, setMyCardsDoc] = useState<Record<string, unknown> | null>(
-    null,
-  );
-  const [events, setEvents] = useState<Record<string, unknown>[]>([]);
+  const { game, events, myCardsDoc, scoreRows, setScoreRows, lobbySnap } =
+    useGameData({ gameId, playerId, lobbyId });
   const [busy, setBusy] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"challenges" | "market">(
     "challenges",
@@ -280,8 +264,6 @@ export default function GameScreen() {
     [],
   );
 
-  const [lobbySnap, setLobbySnap] = useState<Lobby | null>(null);
-  const [scoreRows, setScoreRows] = useState<Record<string, unknown>[]>([]);
   const [scoreModalOpen, setScoreModalOpen] = useState(false);
   const [draftStrokes, setDraftStrokes] = useState(4);
   const [scoreBusy, setScoreBusy] = useState(false);
@@ -299,59 +281,6 @@ export default function GameScreen() {
     liveOverlayScrollRef.current?.scrollTo({ y: 0, animated: false });
     setLiveOverlayAtLatest(true);
   }, [feedExpanded]);
-
-  useEffect(() => {
-    if (!lobbyId) return;
-    let active = true;
-    const u = databaseService.subscribeLobby(lobbyId, (row) => {
-      if (!active) return;
-      setLobbySnap(row);
-    });
-    return () => {
-      active = false;
-      u();
-    };
-  }, [lobbyId]);
-
-  useEffect(() => {
-    if (!gameId) return;
-    let active = true;
-    const u = databaseService.subscribeScores(gameId, (rows) => {
-      if (active) setScoreRows(rows);
-    });
-    return () => {
-      active = false;
-      u();
-    };
-  }, [gameId]);
-
-  useEffect(() => {
-    if (!gameId) return;
-    let active = true;
-    const u1 = databaseService.subscribeGame(gameId, (row) => {
-      if (active) setGame(normalizeGame(row));
-    });
-    const u2 = databaseService.subscribeGameEvents(gameId, (ev) => {
-      if (active) setEvents(ev);
-    });
-    return () => {
-      active = false;
-      u1();
-      u2();
-    };
-  }, [gameId]);
-
-  useEffect(() => {
-    if (!gameId || !playerId) return;
-    let active = true;
-    const u = databaseService.subscribePlayerCards(gameId, playerId, (doc) => {
-      if (active) setMyCardsDoc(doc);
-    });
-    return () => {
-      active = false;
-      u();
-    };
-  }, [gameId, playerId]);
 
   const cards = (myCardsDoc?.cards as Record<string, unknown>[]) ?? [];
   const challenges = cards.filter((c) => isChallengeCardType(String(c.type)));
