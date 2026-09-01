@@ -1,17 +1,19 @@
 import { Slot } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
+import { ReconnectingBanner } from "@/components/fairway/ReconnectingBanner";
 import { VictimAttackModalHost } from "@/components/fairway/VictimAttackModalHost";
 
 /**
- * Wraps every `/game/...` screen so the victim attack alert mounts even when the
- * active route is the legacy `game/[gameId].tsx` leaf (tabs layout is only under `game/[gameId]/`).
+ * Wraps every `/game/...` screen so the session-wide chrome (attack alert,
+ * reconnecting banner) mounts once regardless of which tab is active.
  */
 export default function GameBranchLayout() {
   return (
     <View style={styles.fill}>
-      <VictimAttackModalHost />
       <Slot />
+      <VictimAttackModalHost />
+      <ReconnectingBanner />
     </View>
   );
 }
