@@ -197,6 +197,7 @@ export default function GameScreen() {
   const { game, events, myCardsDoc, scoreRows, setScoreRows, lobbySnap } =
     useGameData({ gameId, playerId, lobbyId });
   const [busy, setBusy] = useState<string | null>(null);
+  const [slowLoad, setSlowLoad] = useState(false);
   const [activeTab, setActiveTab] = useState<"challenges" | "market">(
     "challenges",
   );
@@ -808,10 +809,36 @@ export default function GameScreen() {
     (activeTab === "challenges" ? challengeRerollsLeft : actionRerollsLeft) >
       0 && busy === null;
 
+  useEffect(() => {
+    if (game) {
+      setSlowLoad(false);
+      return;
+    }
+    const t = setTimeout(() => setSlowLoad(true), 8000);
+    return () => clearTimeout(t);
+  }, [game]);
+
   if (!game) {
     return (
       <View style={styles.loadingWrap}>
-        <Text style={styles.loadingText}>Loading game…</Text>
+        <ActivityIndicator color={GolfColors.gold} />
+        <Text style={styles.loadingText}>Loading round…</Text>
+        {slowLoad ? (
+          <>
+            <Text style={styles.loadingHint}>
+              Still trying — check your signal.
+            </Text>
+            <Pressable
+              onPress={() => router.replace("/")}
+              hitSlop={12}
+              style={styles.loadingExit}
+              accessibilityRole="button"
+              accessibilityLabel="Back to start"
+            >
+              <Text style={styles.loadingExitLabel}>Back to start</Text>
+            </Pressable>
+          </>
+        ) : null}
       </View>
     );
   }
@@ -1850,11 +1877,33 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    gap: 12,
+    padding: 24,
+    backgroundColor: GolfColors.forest,
   },
   loadingText: {
     fontFamily: Font.regular,
     fontSize: 15,
+    color: GolfColors.mist,
+  },
+  loadingHint: {
+    fontFamily: Font.regular,
+    fontSize: 13,
     color: GolfColors.sage,
+    textAlign: "center",
+  },
+  loadingExit: {
+    marginTop: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: GolfColors.border,
+  },
+  loadingExitLabel: {
+    fontFamily: Font.semiBold,
+    fontSize: 14,
+    color: GolfColors.gold,
   },
   headerSection: {
     paddingHorizontal: 20,
