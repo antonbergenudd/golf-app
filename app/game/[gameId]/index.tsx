@@ -277,6 +277,23 @@ export default function GameScreen() {
   const [optimisticChallengeStarts, setOptimisticChallengeStarts] = useState<
     Record<string, true>
   >({});
+  /**
+   * Keys that just failed a write (same `${cardId}|${hole}` shape, plus `"hole"`
+   * for advancing). Turns that action's button into a persistent "Retry" so a
+   * dropped request on course signal doesn't silently revert to the idle state.
+   */
+  const [failedActions, setFailedActions] = useState<Record<string, true>>({});
+  const markFailed = useCallback((key: string) => {
+    setFailedActions((prev) => ({ ...prev, [key]: true }));
+  }, []);
+  const clearFailed = useCallback((key: string) => {
+    setFailedActions((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (!feedExpanded) return;
@@ -314,6 +331,7 @@ export default function GameScreen() {
 
   useEffect(() => {
     setOptimisticMarketPurchases({});
+    setFailedActions({});
   }, [currentHole]);
 
   useEffect(() => {
@@ -588,9 +606,11 @@ export default function GameScreen() {
   async function nextHole() {
     if (!game?.playerIds.length) return;
     setBusy("hole");
+    clearFailed("hole");
     try {
       await databaseService.nextHole(gameId, game.playerIds);
     } catch (e) {
+      markFailed("hole");
       GameBlur.alertWeb("Couldn't advance", gameActionError(e));
     } finally {
       setBusy(null);
@@ -617,6 +637,7 @@ export default function GameScreen() {
       }
     }
     const startKey = marketOfferPurchaseKey(card, hole);
+    clearFailed(startKey);
     setOptimisticChallengeStarts((prev) =>
       prev[startKey] ? prev : { ...prev, [startKey]: true },
     );
@@ -637,6 +658,7 @@ export default function GameScreen() {
         delete next[startKey];
         return next;
       });
+      markFailed(startKey);
       GameBlur.alertWeb("Couldn't start that", gameActionError(e));
     }
   }
@@ -646,6 +668,7 @@ export default function GameScreen() {
     const hole = Number(card.hole ?? game?.currentHole ?? 1);
     const key = marketOfferPurchaseKey(card, hole);
 
+    clearFailed(key);
     setOptimisticMarketPurchases((prev) =>
       prev[key] ? prev : { ...prev, [key]: true },
     );
@@ -664,6 +687,7 @@ export default function GameScreen() {
         delete next[key];
         return next;
       });
+      markFailed(key);
       GameBlur.alertWeb("Couldn't buy", gameActionError(e));
     } finally {
       setBusy(null);
@@ -880,9 +904,22 @@ export default function GameScreen() {
                     busy === "hole" ? styles.nextDisabled : null,
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Next hole"
+                  accessibilityLabel={
+                    failedActions.hole ? "Retry next hole" : "Next hole"
+                  }
                 >
-                  <Text style={styles.nextLabel}>Next hole</Text>
+                  {busy === "hole" ? (
+                    <ActivityIndicator color={GolfColors.gold} size="small" />
+                  ) : (
+                    <Text
+                      style={[
+                        styles.nextLabel,
+                        failedActions.hole ? styles.nextLabelFailed : null,
+                      ]}
+                    >
+                      {failedActions.hole ? "Retry" : "Next hole"}
+                    </Text>
+                  )}
                 </Pressable>
               ) : (
                 <View style={styles.headerTrailingSpacer} />
@@ -1075,6 +1112,9 @@ export default function GameScreen() {
                         card={c}
                         gameId={gameId ?? ""}
                         busy={busy}
+                        failed={
+                          failedActions[marketOfferPurchaseKey(c, currentHole)]
+                        }
                         onInspect={() =>
                           openCardInspect({ variant: "challenge", card: c })
                         }
@@ -1102,6 +1142,9 @@ export default function GameScreen() {
                       card={c}
                       myPoints={myPoints}
                       busy={busy}
+                      failed={
+                        failedActions[marketOfferPurchaseKey(c, currentHole)]
+                      }
                       onInspect={() =>
                         openCardInspect({ variant: "market", card: c })
                       }
@@ -1276,6 +1319,13 @@ export default function GameScreen() {
         currentHole={game.currentHole}
         myPoints={myPoints}
         busy={busy}
+        failed={
+          cardInspect
+            ? !!failedActions[
+                marketOfferPurchaseKey(cardInspect.card, game.currentHole)
+              ]
+            : false
+        }
         onClose={() => setCardInspect(null)}
         onStartChallenge={(c) => {
           setCardInspect(null);
@@ -1297,6 +1347,7 @@ function CardInspectModal({
   currentHole,
   myPoints,
   busy,
+  failed,
   onClose,
   onStartChallenge,
   onBuyAction,
@@ -1310,6 +1361,7 @@ function CardInspectModal({
   currentHole: number;
   myPoints: number;
   busy: string | null;
+  failed: boolean;
   onClose: () => void;
   onStartChallenge: (c: Record<string, unknown>) => void;
   onBuyAction: (c: Record<string, unknown>) => void;
@@ -1433,10 +1485,18 @@ function CardInspectModal({
             disabled={busy !== null}
             style={[
               styles.inspectPrimaryBtn,
+              failed && styles.inspectRetryBtn,
               busy !== null && { opacity: 0.5 },
             ]}
           >
-            <Text style={styles.inspectPrimaryBtnText}>Start</Text>
+            <Text
+              style={[
+                styles.inspectPrimaryBtnText,
+                failed && styles.inspectRetryBtnText,
+              ]}
+            >
+              {failed ? "Retry" : "Start"}
+            </Text>
           </Pressable>
         )}
       </>
@@ -1509,10 +1569,18 @@ function CardInspectModal({
             disabled={busy !== null}
             style={[
               styles.inspectPrimaryBtn,
+              failed && styles.inspectRetryBtn,
               busy !== null && { opacity: 0.5 },
             ]}
           >
-            <Text style={styles.inspectPrimaryBtnText}>Buy</Text>
+            <Text
+              style={[
+                styles.inspectPrimaryBtnText,
+                failed && styles.inspectRetryBtnText,
+              ]}
+            >
+              {failed ? "Retry" : "Buy"}
+            </Text>
           </Pressable>
         ) : (
           <Text style={styles.inspectFooterHint}>
@@ -1553,12 +1621,14 @@ function ChallengeTile({
   card,
   gameId,
   busy,
+  failed,
   onInspect,
   onStart,
 }: {
   card: Record<string, unknown>;
   gameId: string;
   busy: string | null;
+  failed?: boolean;
   onInspect: () => void;
   onStart: () => void;
 }) {
@@ -1687,10 +1757,18 @@ function ChallengeTile({
               <View
                 style={[
                   styles.tilePrimaryBtn,
+                  failed && styles.tileRetryBtn,
                   busy !== null && { opacity: 0.5 },
                 ]}
               >
-                <Text style={styles.tilePrimaryBtnText}>Start</Text>
+                <Text
+                  style={[
+                    styles.tilePrimaryBtnText,
+                    failed && styles.tileRetryBtnText,
+                  ]}
+                >
+                  {failed ? "Retry" : "Start"}
+                </Text>
               </View>
             </Pressable>
           )}
@@ -1704,12 +1782,14 @@ function MarketTile({
   card,
   myPoints,
   busy,
+  failed,
   onInspect,
   onBuy,
 }: {
   card: Record<string, unknown>;
   myPoints: number;
   busy: string | null;
+  failed?: boolean;
   onInspect: () => void;
   onBuy: () => void;
 }) {
@@ -1795,10 +1875,18 @@ function MarketTile({
               <View
                 style={[
                   styles.tilePrimaryBtn,
+                  failed && styles.tileRetryBtn,
                   busy !== null && { opacity: 0.5 },
                 ]}
               >
-                <Text style={styles.tilePrimaryBtnText}>Buy</Text>
+                <Text
+                  style={[
+                    styles.tilePrimaryBtnText,
+                    failed && styles.tileRetryBtnText,
+                  ]}
+                >
+                  {failed ? "Retry" : "Buy"}
+                </Text>
               </View>
             </Pressable>
           ) : (
@@ -1960,6 +2048,9 @@ const styles = StyleSheet.create({
     fontFamily: Font.semiBold,
     fontSize: 14,
     color: GolfColors.gold,
+  },
+  nextLabelFailed: {
+    color: GolfColors.danger,
   },
   headerTrailingSpacer: {
     position: "absolute",
@@ -2270,6 +2361,14 @@ const styles = StyleSheet.create({
     fontFamily: Font.bold,
     fontSize: 12,
     color: GolfColors.forestDeep,
+  },
+  tileRetryBtn: {
+    backgroundColor: "rgba(255,82,82,0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(255,82,82,0.5)",
+  },
+  tileRetryBtnText: {
+    color: GolfColors.danger,
   },
   tileStatusDone: {
     flexDirection: "row",
@@ -2656,6 +2755,14 @@ const styles = StyleSheet.create({
     fontFamily: Font.bold,
     fontSize: 14,
     color: GolfColors.forestDeep,
+  },
+  inspectRetryBtn: {
+    backgroundColor: "rgba(255,82,82,0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(255,82,82,0.5)",
+  },
+  inspectRetryBtnText: {
+    color: GolfColors.danger,
   },
   inspectActionsRow: {
     flexDirection: "row",
