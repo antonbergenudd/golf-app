@@ -435,6 +435,30 @@ export type Database = {
         Args: { p_game_id: string; p_player_id: string }
         Returns: boolean
       }
+      request_challenge_verification: {
+        Args: {
+          p_card_hole: number
+          p_card_id: string
+          p_claimant_id: string
+          p_claimant_name: string
+          p_description: string
+          p_game_id: string
+          p_points_to_award: number
+          p_title: string
+          p_type: string
+        }
+        Returns: string
+      }
+      resolve_challenge_verification: {
+        Args: {
+          p_game_id: string
+          p_outcome: string
+          p_verification_id: string
+          p_verifier_id: string
+          p_verifier_name: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

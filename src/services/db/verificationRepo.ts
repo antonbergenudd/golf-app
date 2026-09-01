@@ -10,6 +10,7 @@ import {
   channelTopic,
   nowIso,
   playerCardsId,
+  rpcFunctionMissing,
 } from "./shared";
 
 export async function cancelPendingChallengeVerificationsForPlayerHole(
@@ -103,7 +104,7 @@ export async function fetchPendingChallengeVerificationCount(
   return Math.max(0, count ?? 0);
 }
 
-export async function requestChallengeVerification(input: {
+type RequestVerificationInput = {
   gameId: string;
   claimantId: string;
   claimantName: string;
@@ -111,7 +112,30 @@ export async function requestChallengeVerification(input: {
   cardHole: number;
   pointsToAward: number;
   cardSummary: Record<string, unknown>;
-}): Promise<string> {
+};
+
+export async function requestChallengeVerification(
+  input: RequestVerificationInput,
+): Promise<string> {
+  const { data, error } = await supabase.rpc("request_challenge_verification", {
+    p_game_id: input.gameId,
+    p_claimant_id: input.claimantId,
+    p_claimant_name: input.claimantName,
+    p_card_id: input.cardId,
+    p_card_hole: input.cardHole,
+    p_points_to_award: input.pointsToAward,
+    p_title: String(input.cardSummary.title ?? ""),
+    p_description: String(input.cardSummary.description ?? ""),
+    p_type: String(input.cardSummary.type ?? ""),
+  });
+  if (!error) return String(data);
+  if (!rpcFunctionMissing(error)) throw new Error(error.message);
+  return requestChallengeVerificationClientSide(input);
+}
+
+async function requestChallengeVerificationClientSide(
+  input: RequestVerificationInput,
+): Promise<string> {
   const verificationId = newUuid();
   const pcId = playerCardsId(input.gameId, input.claimantId);
   const { data: row } = await supabase
@@ -212,29 +236,59 @@ export async function requestChallengeVerification(input: {
   return verificationId;
 }
 
-export async function confirmChallengeVerification(input: {
+type ResolveVerificationInput = {
   gameId: string;
   verificationId: string;
   verifierId: string;
   verifierName: string;
-}): Promise<void> {
-  await applyChallengeVerificationOutcome({
-    ...input,
-    outcome: "succeeded",
-  });
+};
+
+export async function confirmChallengeVerification(
+  input: ResolveVerificationInput,
+): Promise<void> {
+  await resolveOutcome(input, "succeeded");
 }
 
 /** Marks verification failed: no points; challenge card is consumed (`claimed`). */
-export async function failChallengeVerification(input: {
-  gameId: string;
-  verificationId: string;
-  verifierId: string;
-  verifierName: string;
-}): Promise<void> {
-  await applyChallengeVerificationOutcome({
-    ...input,
-    outcome: "failed",
+export async function failChallengeVerification(
+  input: ResolveVerificationInput,
+): Promise<void> {
+  await resolveOutcome(input, "failed");
+}
+
+async function resolveOutcome(
+  input: ResolveVerificationInput,
+  outcome: "succeeded" | "failed",
+): Promise<void> {
+  const { data, error } = await supabase.rpc("resolve_challenge_verification", {
+    p_game_id: input.gameId,
+    p_verification_id: input.verificationId,
+    p_verifier_id: input.verifierId,
+    p_verifier_name: input.verifierName,
+    p_outcome: outcome,
   });
+
+  if (error) {
+    if (!rpcFunctionMissing(error)) throw new Error(error.message);
+    // Pre-migration fallback: the old self-contained client path (which runs
+    // its own maybeFreeChallengeRerollAfterVerification).
+    await applyChallengeVerificationOutcome({ ...input, outcome });
+    return;
+  }
+
+  // RPC settled the outcome; trigger the "all three claimed -> free reroll"
+  // side effect (still a client op until the reroll RPC lands in slice 3).
+  const res = (data ?? {}) as { claimant_id?: string; all_claimed?: boolean };
+  if (res.all_claimed && res.claimant_id) {
+    try {
+      await cardRepo.rerollPlayerChallenges(input.gameId, res.claimant_id, {
+        free: true,
+        hideNextChallengeDrawPopup: true,
+      });
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 async function applyChallengeVerificationOutcome(input: {
