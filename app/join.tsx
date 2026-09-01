@@ -16,7 +16,7 @@ import { GolfChrome } from "@/components/fairway/GolfChrome";
 import { AppButton } from "@/components/ui/AppButton";
 import { databaseService } from "@/services/databaseService";
 import {
-  loadGameSession,
+  getOrCreateDevicePlayerId,
   saveGameSession,
   savePlayerName,
   loadSavedPlayerName,
@@ -50,15 +50,9 @@ export default function JoinLobbyScreen() {
     setLoading(true);
     await savePlayerName(pn);
     try {
-      const saved = await loadGameSession();
-      let playerId = `player_${Date.now()}`;
-      if (
-        saved &&
-        saved.lobbyCode.toUpperCase() === c &&
-        saved.playerName === pn
-      ) {
-        playerId = saved.playerId;
-      }
+      // Same device -> same identity, so rejoining a lobby maps back to the
+      // same player row instead of creating a duplicate.
+      const playerId = await getOrCreateDevicePlayerId();
 
       const ok = await databaseService.joinLobby(c, playerId, pn);
       if (!ok) {

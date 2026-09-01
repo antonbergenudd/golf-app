@@ -17,6 +17,7 @@ import { AppButton } from "@/components/ui/AppButton";
 import { Font } from "@/theme/fonts";
 import { databaseService } from "@/services/databaseService";
 import {
+  getOrCreateDevicePlayerId,
   saveGameSession,
   savePlayerName,
   loadSavedPlayerName,
@@ -50,7 +51,7 @@ export default function CreateLobbyScreen() {
     }
     setLoading(true);
     await savePlayerName(pn);
-    const playerId = `player_${Date.now()}`;
+    const playerId = await getOrCreateDevicePlayerId();
     try {
       const lobbyId = await databaseService.createLobby({
         lobbyName: ln,

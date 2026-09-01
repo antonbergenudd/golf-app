@@ -1,6 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { newPlayerId } from "../lib/ids";
+
 const PREFS_KEY = "fairway_active_session_v1";
+const DEVICE_PLAYER_ID_KEY = "fairway_device_player_id_v1";
 
 export type GameSession = {
   lobbyId: string;
@@ -48,6 +51,27 @@ export async function saveGameSession(session: GameSession): Promise<void> {
 
 export async function clearGameSession(): Promise<void> {
   await AsyncStorage.removeItem(PREFS_KEY);
+}
+
+/**
+ * One stable identity per install. Generated once with a CSPRNG and reused for
+ * every lobby the device joins, so rejoining always maps back to the same
+ * player. Falls back to a fresh (unpersisted) id if storage is unavailable.
+ */
+export async function getOrCreateDevicePlayerId(): Promise<string> {
+  try {
+    const existing = await AsyncStorage.getItem(DEVICE_PLAYER_ID_KEY);
+    if (existing && existing.trim()) return existing;
+  } catch {
+    // fall through to mint a new one
+  }
+  const id = newPlayerId();
+  try {
+    await AsyncStorage.setItem(DEVICE_PLAYER_ID_KEY, id);
+  } catch {
+    // non-persistent id is still better than a colliding one
+  }
+  return id;
 }
 
 export async function loadSavedPlayerName(): Promise<string> {
