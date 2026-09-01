@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 
 import type { Database } from "./database.types";
@@ -22,4 +23,14 @@ if (__DEV__ && !supabaseConfigured) {
 export const supabase = createClient<Database>(
   url || "http://localhost:54321",
   anonKey || "public-anon-key",
+  {
+    auth: {
+      // AsyncStorage works on native and web (localStorage) — persists the
+      // anonymous session across app restarts. See src/lib/auth.ts.
+      storage: AsyncStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+    },
+  },
 );

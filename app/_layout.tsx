@@ -15,7 +15,11 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { ensureAuthSession } from "@/lib/auth";
+
 void SplashScreen.preventAutoHideAsync();
+// Warm the anonymous session early so create/join don't wait on it.
+void ensureAuthSession();
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({

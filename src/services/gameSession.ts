@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { ensureAuthSession, getAuthUserId } from "../lib/auth";
 import { newPlayerId } from "../lib/ids";
 
 const PREFS_KEY = "fairway_active_session_v1";
@@ -54,9 +55,13 @@ export async function clearGameSession(): Promise<void> {
 }
 
 /**
- * One stable identity per install. Generated once with a CSPRNG and reused for
- * every lobby the device joins, so rejoining always maps back to the same
- * player. Falls back to a fresh (unpersisted) id if storage is unavailable.
+ * One stable identity per install, reused for every lobby the device joins so
+ * rejoining always maps back to the same player.
+ *
+ * A previously stored id always wins (existing installs keep theirs). For a
+ * fresh install it prefers the Supabase anonymous user id, so `playerId` lines
+ * up with `auth.uid()` for the RLS work on the roadmap; if anon auth is
+ * unavailable it falls back to a CSPRNG id.
  */
 export async function getOrCreateDevicePlayerId(): Promise<string> {
   try {
@@ -65,7 +70,10 @@ export async function getOrCreateDevicePlayerId(): Promise<string> {
   } catch {
     // fall through to mint a new one
   }
-  const id = newPlayerId();
+
+  await ensureAuthSession();
+  const id = (await getAuthUserId()) ?? newPlayerId();
+
   try {
     await AsyncStorage.setItem(DEVICE_PLAYER_ID_KEY, id);
   } catch {
