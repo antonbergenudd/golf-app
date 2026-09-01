@@ -9,7 +9,13 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "build:ios": "eas build --platform ios --profile production",
-    "submit:ios": "eas submit --platform ios --profile production"
+    "submit:ios": "eas submit --platform ios --profile production",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\"",
+    "typecheck": "tsc --noEmit",
+    "test": "jest"
   },
   "dependencies": {
     "@expo-google-fonts/roboto": "^0.4.3",
@@ -38,7 +44,14 @@
     "tailwindcss": "^3.4.19"
   },
   "devDependencies": {
+    "@types/jest": "29.5.14",
     "@types/react": "~19.1.0",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~10.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "jest": "~29.7.0",
+    "jest-expo": "~54.0.18",
+    "prettier": "^3.9.6",
     "typescript": "~5.9.2"
   },
   "private": true

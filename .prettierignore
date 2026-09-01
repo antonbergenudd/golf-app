@@ -1,0 +1,8 @@
+dist/
+dist-*/
+design/
+.expo/
+node_modules/
+package-lock.json
+*.md
+*.html
