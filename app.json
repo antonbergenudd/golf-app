@@ -10,7 +10,7 @@
     "owner": "antonbergenudd",
     "ios": {
       "supportsTablet": false,
-      "buildNumber": "3",
+      "buildNumber": "4",
       "bundleIdentifier": "com.antonbergenudd.fairwaychaos",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
