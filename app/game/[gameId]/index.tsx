@@ -683,7 +683,7 @@ export default function GameScreen() {
     }
   }
 
-  function openEndGame() {
+  const endGameParams = useCallback(() => {
     const map =
       lobbySnap != null
         ? Object.fromEntries(lobbySnap.players.map((pl) => [pl.id, pl.name]))
@@ -693,17 +693,40 @@ export default function GameScreen() {
               id === playerId ? playerName : "Player",
             ]),
           );
-    const namesJson = encodeURIComponent(JSON.stringify(map));
-    router.push({
-      pathname: "/end-game",
-      params: {
-        gameId,
-        lobbyName,
-        currentPlayerId: playerId,
-        namesJson,
-      },
-    });
+    return {
+      gameId,
+      lobbyName,
+      currentPlayerId: playerId,
+      namesJson: encodeURIComponent(JSON.stringify(map)),
+    };
+  }, [lobbySnap, game?.playerIds, gameId, lobbyName, playerId, playerName]);
+
+  async function openEndGame() {
+    // Host ending the round ends it for everyone: the status change below
+    // pulls every other player into the end screen via the effect.
+    if (isHost) {
+      setBusy("endGame");
+      try {
+        await databaseService.updateGameStatus(gameId, "completed");
+        if (lobbyId) {
+          await databaseService.updateLobbyStatus(lobbyId, "completed");
+        }
+      } catch (e) {
+        GameBlur.alertWeb("End game", String(e));
+        setBusy(null);
+        return;
+      }
+      setBusy(null);
+    }
+    router.push({ pathname: "/end-game", params: endGameParams() });
   }
+
+  const endGameNavRef = useRef(false);
+  useEffect(() => {
+    if (game?.status !== "completed" || endGameNavRef.current) return;
+    endGameNavRef.current = true;
+    router.replace({ pathname: "/end-game", params: endGameParams() });
+  }, [game?.status, endGameParams]);
 
   const openScoreModal = useCallback(() => {
     GameBlur.blurActiveElementForModalWeb();
