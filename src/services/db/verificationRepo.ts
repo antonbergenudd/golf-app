@@ -4,9 +4,9 @@ import { newUuid } from "../../lib/ids";
 import * as cardRepo from "./cardRepo";
 import {
   addGameEvent,
+  applyPointDeltas,
   channelTopic,
   isChallengeVerificationDeputyColumnError,
-  mergeGamePoints,
   nowIso,
   playerCardsId,
 } from "./shared";
@@ -336,21 +336,14 @@ async function applyChallengeVerificationOutcome(input: {
     .eq("id", input.verificationId);
 
   if (succeeded && pointsToAward > 0) {
-    await mergeGamePoints(input.gameId, (pp) => {
-      const next = { ...pp };
-      next[claimantId] = (next[claimantId] ?? 0) + pointsToAward;
-      if (hasDeputy) {
-        next[deputyId] = (next[deputyId] ?? 0) + pointsToAward;
-      }
-      return next;
+    await applyPointDeltas(input.gameId, {
+      [claimantId]: pointsToAward,
+      ...(hasDeputy ? { [deputyId]: pointsToAward } : {}),
     });
   }
 
   if (!succeeded && hasDeputy) {
-    await mergeGamePoints(input.gameId, (pp) => ({
-      ...pp,
-      [claimantId]: Math.max(0, (pp[claimantId] ?? 0) - 1),
-    }));
+    await applyPointDeltas(input.gameId, { [claimantId]: -1 });
   }
 
   await supabase

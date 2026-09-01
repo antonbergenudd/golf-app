@@ -3,8 +3,8 @@ import { supabase } from "../../lib/supabase";
 import * as cardRepo from "./cardRepo";
 import {
   addGameEvent,
+  applyPointDeltas,
   initialPlayerPoints,
-  mergeGamePoints,
   nowIso,
   subscribeTable,
 } from "./shared";
@@ -162,10 +162,7 @@ export async function awardPoints(
   playerId: string,
   points: number,
 ): Promise<void> {
-  await mergeGamePoints(gameId, (pp) => ({
-    ...pp,
-    [playerId]: (pp[playerId] ?? 0) + points,
-  }));
+  await applyPointDeltas(gameId, { [playerId]: points });
 }
 
 export async function deductPoints(
@@ -174,10 +171,7 @@ export async function deductPoints(
   points: number,
 ): Promise<void> {
   if (points <= 0) return;
-  await mergeGamePoints(gameId, (pp) => ({
-    ...pp,
-    [playerId]: (pp[playerId] ?? 0) - points,
-  }));
+  await applyPointDeltas(gameId, { [playerId]: -points });
 }
 
 export async function setPlayerBalanceHiddenForCurrentHole(input: {

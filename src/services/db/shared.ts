@@ -90,7 +90,7 @@ export function subscribeTable(opts: {
  * Read `games.player_points`, apply `merge`, write it back.
  *
  * NOTE: client-side read-modify-write — two concurrent callers can clobber each
- * other. See `applyPointDeltas` for the atomic path.
+ * other. Prefer {@link applyPointDeltas}; this remains the fallback for it.
  */
 export async function mergeGamePoints(
   gameId: string,
@@ -107,6 +107,57 @@ export async function mergeGamePoints(
     .from("games")
     .update({ player_points: next, updated_at: nowIso() })
     .eq("id", gameId);
+}
+
+/**
+ * Pure form of the points update: apply signed `deltas` to `prev`, flooring
+ * every touched balance at 0. Kept identical to the plpgsql in
+ * `apply_point_deltas` so the RPC and the fallback agree.
+ */
+export function applyDeltasToPoints(
+  prev: Record<string, number>,
+  deltas: Record<string, number>,
+): Record<string, number> {
+  const next = { ...prev };
+  for (const [pid, delta] of Object.entries(deltas)) {
+    if (Number(delta) === 0) continue;
+    next[pid] = Math.max(0, Math.floor((next[pid] ?? 0) + Number(delta)));
+  }
+  return next;
+}
+
+/**
+ * Apply signed `deltas` (playerId -> change) to `games.player_points`.
+ *
+ * Prefers the atomic `apply_point_deltas` RPC (migration
+ * `20260902000000_atomic_game_mutations.sql`). If that function is not present
+ * yet, falls back to a client-side read-modify-write. Both paths floor every
+ * balance at 0 — the only un-guarded caller (`deductPoints`) is always given a
+ * checked amount, so this is a safety net, not a behaviour change in practice.
+ */
+export async function applyPointDeltas(
+  gameId: string,
+  deltas: Record<string, number>,
+): Promise<void> {
+  const clean = Object.fromEntries(
+    Object.entries(deltas).filter(([, v]) => Number(v) !== 0),
+  );
+  if (Object.keys(clean).length === 0) return;
+
+  const { error } = await supabase.rpc("apply_point_deltas", {
+    p_game_id: gameId,
+    p_deltas: clean,
+  });
+  if (!error) return;
+
+  const missingFn =
+    error.code === "PGRST202" ||
+    /could not find the function|does not exist|schema cache/i.test(
+      error.message ?? "",
+    );
+  if (!missingFn) throw error;
+
+  await mergeGamePoints(gameId, (pp) => applyDeltasToPoints(pp, clean));
 }
 
 export async function addGameEvent(input: {

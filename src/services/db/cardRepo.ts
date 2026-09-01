@@ -11,7 +11,7 @@ import * as gameRepo from "./gameRepo";
 import * as verificationRepo from "./verificationRepo";
 import {
   addGameEvent,
-  mergeGamePoints,
+  applyPointDeltas,
   nowIso,
   playerCardsId,
   REROLL_HAND_MAX_USES,
@@ -773,11 +773,10 @@ async function stealRandomPointsBetweenPlayers(input: {
   const targetBal = Math.max(0, Math.floor(pp[input.targetId] ?? 0));
   if (targetBal <= 0) return { ok: false };
   const take = Math.min(roll, targetBal);
-  await mergeGamePoints(input.gameId, (prev) => ({
-    ...prev,
-    [input.targetId]: (prev[input.targetId] ?? 0) - take,
-    [input.thiefId]: (prev[input.thiefId] ?? 0) + take,
-  }));
+  await applyPointDeltas(input.gameId, {
+    [input.targetId]: -take,
+    [input.thiefId]: take,
+  });
   return { ok: true, amount: take };
 }
 
