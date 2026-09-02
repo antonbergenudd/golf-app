@@ -26,6 +26,9 @@ design/
 *.key
 *.mobileprovision
 
+# Play Store service account key (for `eas submit --platform android`)
+google-service-account.json
+
 # Metro
 .metro-health-check*
 
